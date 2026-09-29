@@ -1,0 +1,31 @@
+{
+  "name": "riverbound",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Riverbound – a browser-based 3D river-crossing puzzle game (three.js WebGPU + WebGL2 fallback)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "validate:levels": "vitest run tests/unit/levels.validate.test.ts",
+    "test:e2e": "playwright test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/node": "24.19.0",
+    "@types/three": "0.186.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.1",
+    "vitest": "5.0.2"
+  }
+}
