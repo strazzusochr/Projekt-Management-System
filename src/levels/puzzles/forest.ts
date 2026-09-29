@@ -1,0 +1,76 @@
+import type { PuzzleDefinition } from '../../puzzle/types';
+
+/** LEVEL 1 – The Whispering Forest: classic wolf / goat / cabbage. */
+export const forestPuzzle: PuzzleDefinition = {
+  id: 'forest',
+  entities: [
+    {
+      id: 'keeper',
+      name: 'Mira',
+      kind: 'keeper',
+      role: 'keeper',
+      canPilot: true,
+      trait: 'Waldhüterin · steuert das Boot · passt auf ihr Ufer auf',
+      flavor: 'Solange Mira in der Nähe ist, benimmt sich jedes Tier.',
+    },
+    {
+      id: 'wolf',
+      name: 'Wolf',
+      forms: { nom: 'der Wolf', acc: 'den Wolf', dat: 'dem Wolf' },
+      kind: 'wolf',
+      role: 'cargo',
+      trait: 'Frisst die Ziege, wenn niemand aufpasst',
+      flavor: 'Graupelz – hungrig, aber Mira gehorcht er.',
+    },
+    {
+      id: 'goat',
+      name: 'Ziege',
+      forms: { nom: 'die Ziege', acc: 'die Ziege', dat: 'der Ziege' },
+      kind: 'goat',
+      role: 'cargo',
+      trait: 'Frisst den Kohlkopf · wird vom Wolf bedroht',
+      flavor: 'Flocke – neugierig und immer hungrig.',
+    },
+    {
+      id: 'cabbage',
+      name: 'Kohlkopf',
+      forms: { nom: 'der Kohlkopf', acc: 'den Kohlkopf', dat: 'dem Kohlkopf' },
+      kind: 'cabbage',
+      role: 'cargo',
+      trait: 'Wird von der Ziege gefressen',
+      flavor: 'Ein prächtiger Waldkohl für das Herbstfest.',
+    },
+  ],
+  rules: [
+    {
+      id: 'wolf-goat',
+      type: 'forbiddenTogether',
+      a: { ids: ['wolf'] },
+      b: { ids: ['goat'] },
+      unlessPresent: { ids: ['keeper'] },
+      title: 'Der Wolf lauert',
+      summary: 'Wolf und Ziege nie ohne Mira auf einem Ufer.',
+      icon: 'fang',
+      message: 'Diese Konstellation ist nicht zulässig: Der Wolf würde die Ziege fressen – {loc} passt niemand auf.',
+    },
+    {
+      id: 'goat-cabbage',
+      type: 'forbiddenTogether',
+      a: { ids: ['goat'] },
+      b: { ids: ['cabbage'] },
+      unlessPresent: { ids: ['keeper'] },
+      title: 'Die Ziege nascht',
+      summary: 'Ziege und Kohlkopf nie ohne Mira auf einem Ufer.',
+      icon: 'leaf',
+      message: 'Diese Konstellation ist nicht zulässig: Die Ziege würde den Kohlkopf fressen – {loc} passt niemand auf.',
+    },
+  ],
+  vehicle: { capacity: 2, requirePilot: true, stickyPilots: ['keeper'] },
+  roleLabels: { cargo: { one: 'ein Passagier', many: '{n} Passagiere' } },
+  cost: { type: 'crossings' },
+  sides: [
+    { name: 'Moosufer', at: 'am Moosufer', to: 'zum Moosufer' },
+    { name: 'Lichtungsufer', at: 'am Lichtungsufer', to: 'zum Lichtungsufer' },
+  ],
+  vehicleNames: { name: 'Boot', at: 'im Boot', into: 'ins Boot', nom: 'das Boot', acc: 'das Boot', from: 'aus dem Boot' },
+};

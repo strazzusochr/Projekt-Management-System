@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "validate:levels": "vitest run tests/unit/levels.validate.test.ts",
+    "validate:levels": "vitest run tests/unit/puzzle.test.ts -t \"level validation\"",
     "test:e2e": "playwright test"
   },
   "engines": {
