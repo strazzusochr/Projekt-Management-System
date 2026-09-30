@@ -7,3 +7,8 @@ qa-output/
 *.log
 .DS_Store
 .vite/
+
+# temporary agent harness artifacts
+src/worlds/*/_harness/
+src/worlds/*/vitest.tmp.config.ts
+src/worlds/*/smoke.test.ts
