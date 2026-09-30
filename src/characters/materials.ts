@@ -56,7 +56,10 @@ export function createCharacterMaterial(opts: { translucent?: boolean; ghostColo
   const hl = fres.mul(highlight.mul(0.55)).add(highlight.mul(0.06));
   const alertGlow = fres.mul(alert).mul(pulse.mul(0.9).add(0.35));
   const baseEmissive = vertexColor().rgb.mul(pbr.z);
+  // subtle rim + self light so figures stay readable in dark worlds (night city, polar night)
+  const rim = pow(fres, 1.6).mul(0.22).add(0.035);
   let emissive = baseEmissive
+    .add(vertexColor().rgb.mul(rim))
     .add(highlightColor.mul(hl))
     .add(vec3(1.0, 0.22, 0.12).mul(alertGlow))
     .add(color(0.7, 1.0, 0.75).mul(flash.mul(fres.add(0.25)).mul(0.8)));

@@ -433,7 +433,8 @@ export class UI {
 
   showHud(s: HudState): void {
     const compact = this.isCompact();
-    this.rulesOpen = !compact;
+    // rules start collapsed so the level plate never covers figures on the left bank
+    this.rulesOpen = false;
     this.plateOpen = !compact;
     this.rulesTouched = false;
     this.lastMoves = -1;
