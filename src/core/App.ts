@@ -470,7 +470,8 @@ export class App {
     const now = performance.now();
     const dtMs = Math.min(250, now - this.clock);
     this.clock = now;
-    const dt = Math.min(0.1, dtMs / 1000);
+    // in QA mode (software rendering, very low fps) the simulation keeps pace with wall-clock time
+    const dt = Math.min(this.cfg.qa ? 0.5 : 0.1, dtMs / 1000);
     this.elapsed += dt;
     this.fps = this.fps * 0.93 + (1000 / Math.max(1, dtMs)) * 0.07;
     this.input.update();

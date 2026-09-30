@@ -7,7 +7,7 @@ const out = `qa-output/shots/${renderer}-${quality}`;
 mkdirSync(out, { recursive: true });
 const args = renderer === 'webgpu' ? ['--enable-unsafe-webgpu', '--enable-features=Vulkan', '--use-angle=vulkan'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', headless: true, args });
-const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const page = await browser.newPage({ viewport: { width: 1100, height: 620 } });
 const logs = [];
 page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(`[${m.type()}] ${m.text().slice(0, 300)}`); });
 page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`));
@@ -46,13 +46,13 @@ for (const id of levelsArg.split(',')) {
       if (st.won) break;
       const sol = await page.evaluate(() => window.__RIVERBOUND_QA__.solveFromCurrent());
       const group = sol.actions[0];
-      for (const eid of st.boatLoad) if (!group.includes(eid)) { const p = await page.evaluate((e) => window.__RIVERBOUND_QA__.entityScreenPos(e), eid); if (!(await page.evaluate(() => 0))) {} await click(p); await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle()); }
+      for (const eid of st.boatLoad) if (!group.includes(eid)) { const p = await page.evaluate((e) => window.__RIVERBOUND_QA__.entityScreenPos(e), eid); if (!(await page.evaluate(() => 0))) {} await click(p); await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle(600000)); }
       for (const eid of group) {
         const cur = await page.evaluate(() => window.__RIVERBOUND_QA__.currentLevel());
         if (cur.boatLoad.includes(eid)) continue;
         const p = await page.evaluate((e) => window.__RIVERBOUND_QA__.entityScreenPos(e), eid);
         await click(p);
-        await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle());
+        await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle(600000));
       }
       await page.click('[data-testid="btn-sail"]');
       await page.waitForTimeout(300);
