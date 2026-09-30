@@ -62,8 +62,8 @@ const intro = params.get('intro');
       world.update(dt, t + 5, cam);
       post.render();
       frames++;
-      if (frames === 6) w.info = { calls: renderer.info.render.drawCalls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries };
       if (frames === Number(params.get('frames') ?? '6')) {
+        w.info = { calls: renderer.info.render.drawCalls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries };
         w.ready = true;
         renderer.setAnimationLoop(null);
       }

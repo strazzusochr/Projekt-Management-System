@@ -195,9 +195,11 @@ export function buildQuay(bin: Bin): THREE.Object3D {
   const sm: THREE.Matrix4[] = [];
   const sc: THREE.Color[] = [];
   for (const s of [-1, 1]) {
-    for (let k = 0; k < 3; k++) {
-      sm.push(mtx(s * (5.62 - k * 0.0 + 0.05 + 0.0), 0.36 - k * 0.19, 0, 0, [0.55 - 0.0, 0.16, 2.9 - k * 0.0]));
-      sc.push(C('#a8b09c').multiplyScalar(1 - k * 0.1));
+    for (const q of [-1, 1]) {
+      for (let k = 0; k < 3; k++) {
+        sm.push(mtx(s * (6.0 - k * 0.46), 0.36 - k * 0.17, q * 2.05, 0, [0.5, 0.2, 1.3]));
+        sc.push(C('#a8b09c').multiplyScalar(1 - k * 0.08));
+      }
     }
     // landing pillars with lanterns
     for (const z of [-1.7, 1.7]) {

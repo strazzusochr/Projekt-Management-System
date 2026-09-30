@@ -9,7 +9,7 @@ const W = 0.98; // half width
 const D = 0.52; // depth below rim line
 
 function rimY(u: number): number {
-  return 0.34 + 0.5 * Math.pow(Math.abs(u), 2.4);
+  return 0.34 + 0.72 * Math.pow(Math.abs(u), 2.4);
 }
 
 /** Point on the hull surface for u in -1..1 along the keel and phi in -pi/2..pi/2 across. */
@@ -74,11 +74,11 @@ function petalFan(z: number, dir: number): Geo[] {
   const n = 9;
   for (let i = 0; i < n; i++) {
     const a = ((i - (n - 1) / 2) / ((n - 1) / 2)) * 1.05; // fan angle around Z axis
-    const len = 0.5 - Math.abs(a) * 0.12;
+    const len = 0.72 - Math.abs(a) * 0.16;
     const petal = new THREE.SphereGeometry(1, 12, 10);
-    petal.scale(0.085, len * 0.5, 0.028);
+    petal.scale(0.1, len * 0.5, 0.03);
     petal.translate(0, len * 0.5, 0);
-    const b = bake(petal, { color: '#f7dbe8', rough: 0.45, emit: 0.25 }, { p: [0, base, z], r: [dir * 0.55, 0, -a] });
+    const b = bake(petal, { color: '#f7dbe8', rough: 0.45, emit: 0.45 }, { p: [0, base, z], r: [dir * 0.55, 0, -a] });
     // gradient white → magenta tip
     const p = b.getAttribute('position');
     const cl = b.getAttribute('color') as THREE.BufferAttribute;
