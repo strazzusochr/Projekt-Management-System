@@ -335,9 +335,12 @@ export function createWater(o: WaterOptions): THREE.Mesh {
   })();
   const shoreV = varying(attribute('shore', 'float'));
   const P = positionWorld.xz;
-  const n1 = tier === 'low' ? sin(P.x.mul(2.1).add(P.y.mul(1.3)).add(time.mul(1.6))).mul(0.5) : mx_noise_float(P.mul(0.9).sub(flow.mul(time)));
-  const n2 = tier === 'low' ? sin(P.y.mul(2.7).sub(P.x.mul(0.9)).sub(time.mul(1.2))).mul(0.5) : mx_noise_float(P.mul(1.7).sub(flow.mul(time.mul(1.4))).add(17));
-  const ns = o.normalStrength ?? 0.35;
+  // gradient noise on every tier (sine-only normals produce visible corrugation at distance)
+  const n1 = mx_noise_float(P.mul(0.9).sub(flow.mul(time)));
+  const n2 = mx_noise_float(P.mul(1.7).sub(flow.mul(time.mul(1.4))).add(17));
+  // fade normal detail with distance to avoid aliasing shimmer far away
+  const distFade = smoothstep(90, 12, cameraPosition.sub(positionWorld).length());
+  const ns = float(o.normalStrength ?? 0.35).mul(distFade.mul(0.8).add(0.2));
   const nW = normalize(vec3(n1.mul(ns), 1, n2.mul(ns)));
   m.normalNode = transformNormalByViewMatrix(nW, cameraViewMatrix);
   const fres = pow(float(1).sub(max(dot(nW, normalize(cameraPosition.sub(positionWorld))), 0)), 5).mul(0.98).add(0.02);

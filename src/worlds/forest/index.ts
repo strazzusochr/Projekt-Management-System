@@ -103,6 +103,10 @@ const factory: WorldFactory = async (ctx): Promise<LevelWorld> => {
   upWater.renderOrder = 1;
   scene.add(upWater);
 
+  // the boat lantern gets the first dynamic light of the budget
+  const boatLit = lights.left > 0;
+  if (boatLit) lights.left--;
+
   // ── environment parts ──
   const flora = buildFlora(bc);
   parts.push(flora);
@@ -110,8 +114,7 @@ const factory: WorldFactory = async (ctx): Promise<LevelWorld> => {
   parts.push(props);
 
   // ── vehicle ──
-  const boat = createBoat(bin, { lights: lights.left > 0 ? 1 : 0 });
-  if (boat.lantern) lights.left--;
+  const boat = createBoat(bin, { lights: boatLit ? 1 : 0 });
   scene.add(boat.rig.root);
   boat.rig.root.position.copy(boat.rig.docks[0]);
   boat.rig.root.rotation.y = boat.rig.yaw[0];

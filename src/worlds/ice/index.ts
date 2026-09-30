@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 import type { BankLayout, LevelWorld, WorldBuildContext, WorldFactory } from '../../world/types';
-import { applyEnvironment, createLightRig, createParticles, createSkyDome, setupFog } from '../../world/kit';
+import { createLightRig, createParticles, createSkyDome, setupFog } from '../../world/kit';
 import type { WorldLook } from '../../render/PostFX';
 import { createAurora } from './aurora';
 import { createBackdrop } from './backdrop';
@@ -61,7 +61,21 @@ const factory: WorldFactory = async (bctx: WorldBuildContext): Promise<LevelWorl
   scene.add(sky);
   disposer.add(sky.geometry);
   disposer.add(sky.material as THREE.Material);
-  const disposeEnv = applyEnvironment(renderer, scene, sky, 0.6);
+  // image-based lighting: sky + aurora baked into the PMREM so glossy ice mirrors the curtains
+  const disposeEnv = (() => {
+    const envScene = new THREE.Scene();
+    const dome = new THREE.Mesh(sky.geometry, sky.material);
+    dome.frustumCulled = false;
+    envScene.add(dome);
+    const envAurora = createAurora(quality, disposer);
+    envScene.add(envAurora.group);
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const rt = pmrem.fromScene(envScene, 0.02, 0.1, 1000);
+    scene.environment = rt.texture;
+    scene.environmentIntensity = 0.7;
+    pmrem.dispose();
+    return () => rt.dispose();
+  })();
   setupFog(scene, { color: '#12294a', density: 0.0034, heightDensity: 0.0095, height: 3.2 });
 
   // ── lights ──

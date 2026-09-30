@@ -1,4 +1,5 @@
 import * as THREE from 'three/webgpu';
+import { color, float, mx_noise_float, smoothstep, time, uniform, uv, vec3 } from 'three/tsl';
 import type { VehicleRig } from '../../world/types';
 import { glowMat } from '../../world/kit';
 import { bake, cone, cyl, ellipsoid, merge, mottle, roundedBox, torus, tube } from '../../characters/geo';
@@ -260,6 +261,29 @@ export function createBoat(bin: Bin, opts: { lights: number }): BoatBuild {
   proxy.name = 'pick:vehicle';
   root.add(proxy);
 
+  // ── wake behind the stern (foam V), fades in while moving ──
+  const wakeAmt = uniform(0);
+  const wakeGeo = bin.add(new THREE.PlaneGeometry(3.4, 9, 1, 1));
+  wakeGeo.rotateX(-Math.PI / 2);
+  wakeGeo.translate(0, 0, L0 - 3.4);
+  const wakeMat = bin.add(new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false }));
+  {
+    const v = uv();
+    const d = float(1).sub(v.y);
+    const lx = v.x.sub(0.5).abs().mul(2);
+    const w = d.mul(0.85).add(0.15);
+    const band = smoothstep(0.14, 0.0, lx.sub(w.mul(0.85)).abs());
+    const n = mx_noise_float(vec3(v.x.mul(9), d.mul(14).sub(time.mul(3)), time.mul(0.5))).mul(0.5).add(0.5);
+    const core = smoothstep(w, 0.0, lx).mul(n).mul(0.55);
+    wakeMat.colorNode = color('#f4fbf8');
+    wakeMat.opacityNode = band.mul(0.7).add(core).mul(float(1).sub(d).pow(1.4)).mul(wakeAmt).clamp(0, 0.85);
+  }
+  const wake = new THREE.Mesh(wakeGeo, wakeMat);
+  wake.position.y = 0.035;
+  wake.renderOrder = 3;
+  wake.frustumCulled = false;
+  root.add(wake);
+
   // ── animation ──
   let stroke = 0;
   let mv = 0;
@@ -290,6 +314,7 @@ export function createBoat(bin: Bin, opts: { lights: number }): BoatBuild {
     crossingTime: 3.2,
     update(dt: number, t: number, moving: number): void {
       mv += (moving - mv) * (1 - Math.exp(-dt * 4));
+      wakeAmt.value = Math.min(1, mv * 1.3);
       stroke += dt * (1.4 + 3.6 * mv);
       applyBob(t, mv);
       const pull = clamp01((Math.cos(stroke) + 0.25) / 0.6);

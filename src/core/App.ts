@@ -164,7 +164,16 @@ export class App {
     this.map?.setSelected(id);
     const card = id ? this.mapCards().find((c) => c.id === id) ?? null : null;
     this.ui.selectMapCard(card);
-    if (id && focus && this.map) this.rig.focus(this.map.nodePosition(id), Math.max(26, this.map.camera.home.radius * 0.65));
+    if (id && this.map) {
+      // frame the island right of the info card (card occupies the left ~35 % of the screen)
+      const p = this.map.nodePosition(id).clone();
+      const az = this.rig.currentView.azimuth;
+      const radius = Math.max(26, this.map.camera.home.radius * 0.62);
+      p.x -= Math.cos(az) * radius * 0.28;
+      p.z += Math.sin(az) * radius * 0.28;
+      if (focus) this.rig.focus(p, radius);
+      else this.rig.frame({ target: p, radius });
+    }
   }
 
   private mapHandler(): PointerHandler {

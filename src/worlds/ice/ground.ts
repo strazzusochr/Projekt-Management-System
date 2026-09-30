@@ -1,7 +1,9 @@
 import * as THREE from 'three/webgpu';
 import {
+  atan,
   cameraPosition,
   color,
+  dot,
   float,
   floor,
   hash,
@@ -19,6 +21,7 @@ import {
   transformNormalByViewMatrix,
   cameraViewMatrix,
   normalize,
+  reflect,
   uv,
   vec2,
   vec3,
@@ -195,6 +198,26 @@ export function createGround(ctx: WorldCtx): Ground {
   });
   d.add(water.geometry);
   d.add(water.material as THREE.Material);
+  // the aurora mirrors in the lead: analytic reflection of the northern curtains
+  {
+    const wm = water.material as THREE.MeshStandardNodeMaterial;
+    const P = positionWorld;
+    const rip = mx_noise_float(vec3(P.x.mul(0.7), P.z.mul(0.45).sub(time.mul(0.35)), time.mul(0.18)));
+    const rip2 = mx_noise_float(vec3(P.x.mul(1.9), P.z.mul(1.3).add(time.mul(0.4)), 3.0));
+    const N = normalize(vec3(rip.mul(0.09).add(rip2.mul(0.04)), 1.0, rip2.mul(0.07).add(rip.mul(0.03))));
+    const Vd = normalize(P.sub(cameraPosition));
+    const Rv = reflect(Vd, N);
+    const elev = Rv.y;
+    const az = atan(Rv.x, Rv.z.negate());
+    const band = smoothstep(0.02, 0.2, elev).mul(smoothstep(0.9, 0.3, elev));
+    const north = smoothstep(0.25, -0.7, Rv.z);
+    const rays = mx_noise_float(vec2(az.mul(16.0), time.mul(0.1))).mul(0.5).add(0.5);
+    const hue = smoothstep(0.2, 0.75, elev);
+    const auroraCol = mix(color(new THREE.Color('#39ffa0')), color(new THREE.Color('#9a5cff')), hue);
+    const fres = pow(float(1).sub(dot(N, Vd.negate()).clamp(0, 1)), 3.0).mul(0.75).add(0.16);
+    const aur = auroraCol.mul(band).mul(north).mul(rays.mul(1.1).add(0.25)).mul(fres).mul(1.5);
+    wm.emissiveNode = (wm.emissiveNode as ReturnType<typeof color>).add(aur);
+  }
   water.renderOrder = 1;
   group.add(water);
   return { group };
