@@ -1,10 +1,10 @@
 import * as THREE from 'three/webgpu';
-import { attribute, fract, smoothstep, sin, time, uv, vec3 } from 'three/tsl';
+import { attribute, fract, positionLocal, smoothstep, sin, time, uv, vec3 } from 'three/tsl';
 import { applyEnvironment, createLightRig, createParticles, createSkyDome, createWater, glowMat, mat, rng, setupFog } from '../world/kit';
 import type { QualityPreset } from '../render/quality';
 import type { WorldLook } from '../render/PostFX';
 import type { CameraKeyframe, CameraLimits, CameraView } from '../camera/CameraRig';
-import { TOP, makeMaterials, ringMaterial, starGeo, torus, type IslandMats } from './mapKit';
+import { TOP, makeMaterials, ringMaterial, starGeo, type IslandMats } from './mapKit';
 import { ISLAND_BUILDERS, type IslandBuild } from './islands';
 
 export interface MapNodeInfo {
@@ -21,11 +21,11 @@ interface Layout {
 }
 
 const LAYOUT: Record<string, Layout> = {
-  forest: { pos: [-22, 0, 6.5], radius: 4.4 },
-  temple: { pos: [-11, 0, -5.5], radius: 4.5 },
-  neon: { pos: [0.5, 0, 4], radius: 4.5 },
-  harbor: { pos: [12, 4.8, -6], radius: 4.4 },
-  ice: { pos: [23, 0, 5], radius: 4.4 },
+  forest: { pos: [-20.5, 0, 6.5], radius: 4.4 },
+  temple: { pos: [-10.2, 0, -5.5], radius: 4.5 },
+  neon: { pos: [0, 0, 4.5], radius: 4.5 },
+  harbor: { pos: [10.4, 4.8, -6.5], radius: 4.4 },
+  ice: { pos: [20.6, 0, 5.5], radius: 4.4 },
 };
 const ORDER = ['forest', 'temple', 'neon', 'harbor', 'ice'];
 
@@ -102,13 +102,10 @@ export class WorldMap {
   private readonly byId = new Map<string, Island>();
   private readonly pickMeshes: THREE.Mesh[] = [];
   private disposeEnv: (() => void) | null = null;
-  private sky: THREE.Mesh | null = null;
   private built = false;
   // path
   private pathStones: THREE.InstancedMesh | null = null;
   private pathOrbs: THREE.InstancedMesh | null = null;
-  private pathPosts: THREE.InstancedMesh | null = null;
-  private pathSeg: number[] = [];
   private orbBase: THREE.Vector3[] = [];
   private pathGlow: THREE.Mesh | null = null;
   private pathGlowSeg: Float32Array | null = null;
@@ -155,7 +152,6 @@ export class WorldMap {
       curve: 0.55,
     });
     scene.add(sky);
-    this.sky = sky;
     try {
       await this.renderer.init();
       this.disposeEnv = applyEnvironment(this.renderer, scene, sky, 0.9);
@@ -185,24 +181,24 @@ export class WorldMap {
     const sea = createWater({
       width: 260,
       length: 260,
-      shallow: '#69bccb',
-      deep: '#153d63',
+      shallow: '#6fe6cf',
+      deep: '#087c98',
       foam: '#fff4e2',
       sky: '#ffd6a6',
       flow: [0.12, 0.05],
       waveAmp: 0.06,
-      waveLen: 5.5,
+      waveLen: 7,
       roughness: 0.07,
       depthFade: 4.5,
       foamWidth: 0.55,
       refraction: 0.02,
-      normalStrength: 0.42,
-      minOpacity: 0.8,
+      normalStrength: 0.2,
+      minOpacity: 0.86,
       glow: '#ffa860',
-      glowStrength: 0.1,
+      glowStrength: 0.06,
       quality: q,
     });
-    sea.position.y = -0.02;
+    sea.position.y = -0.3;
     scene.add(sea);
     await tick();
 
@@ -261,7 +257,7 @@ export class WorldMap {
     halo.position.y = 0.05;
     halo.renderOrder = 4;
     ringGroup.add(ring, halo);
-    ringGroup.position.y = 0.12 - (lay.pos[1] > 1 ? lay.pos[1] - 0.2 : 0) * 0;
+    ringGroup.position.y = lay.pos[1] > 1 ? 0.25 : -0.2;
     ringGroup.visible = false;
     root.add(ringGroup);
 
@@ -274,13 +270,13 @@ export class WorldMap {
     const keyhole = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.42, 10), glowMat('#8fc4ff', 2.5));
     keyhole.rotation.x = Math.PI / 2;
     lockGroup.add(body, sh, keyhole);
-    lockGroup.position.y = TOP + 3.8;
+    lockGroup.position.y = TOP + (built.top ?? 4.2) - 0.7;
     lockGroup.scale.setScalar(1.15);
     root.add(lockGroup);
 
     // completion badge (billboard): flag + stars
     const badge = this.makeBadge();
-    badge.group.position.y = TOP + 5.3;
+    badge.group.position.y = TOP + (built.top ?? 4.2) + 0.6;
     root.add(badge.group);
 
     // pick sphere lives in the scene (does not move when the island lifts)
@@ -333,8 +329,8 @@ export class WorldMap {
     const cloth = new THREE.MeshStandardNodeMaterial({ color: new THREE.Color('#ffc23a'), roughness: 0.5, metalness: 0.2, side: THREE.DoubleSide });
     cloth.emissive = new THREE.Color('#ff8a10');
     cloth.emissiveIntensity = 0.45;
-    const wave = sin(attribute('position', 'vec3').x.mul(6).sub(time.mul(4.2))).mul(0.07);
-    cloth.positionNode = vec3(attribute('position', 'vec3').x, attribute('position', 'vec3').y, wave.mul(attribute('position', 'vec3').x));
+    const wave = sin(positionLocal.x.mul(6).sub(time.mul(4.2))).mul(0.07);
+    cloth.positionNode = vec3(positionLocal.x, positionLocal.y, wave.mul(positionLocal.x));
     const flag = new THREE.Mesh(clothGeo, cloth);
     flag.position.set(0.04, 0.68, 0);
     const emblem = new THREE.Mesh(starGeo(0.17, 0.075, 0.03), glowMat('#fff2c0', 2.2));
@@ -482,7 +478,6 @@ export class WorldMap {
       postMesh.setMatrixAt(i, this.tmpM);
     });
     postMesh.instanceMatrix.needsUpdate = true;
-    this.pathPosts = postMesh;
     this.scene.add(postMesh);
     const all = [...posts.map((p) => ({ p: p.p.clone().setY(p.p.y + 1.45), seg: p.seg })), ...orbs];
     const orbGeo = new THREE.SphereGeometry(0.2, 12, 8);
@@ -495,7 +490,6 @@ export class WorldMap {
     orbMesh.instanceMatrix.needsUpdate = true;
     this.pathOrbs = orbMesh;
     this.scene.add(orbMesh);
-    this.pathSeg = [...stones.map((s) => s.seg), ...all.map((s) => s.seg)];
     (stoneMesh.userData as { n: number }).n = stones.length;
     (orbMesh.userData as { n: number }).n = all.length;
     (capMesh.userData as { n: number }).n = stones.length;
@@ -713,7 +707,7 @@ export class WorldMap {
         isl.ring.rotation.z = t * 0.55;
         const s = 0.9 + isl.sel * 0.1;
         isl.ringGroup.scale.set(s, 1, s);
-        isl.ringGroup.position.y = 0.14 + Math.sin(t * 1.6) * 0.03;
+        isl.ringGroup.position.y = (isl.pos.y > 1 ? 0.25 : -0.2) + Math.sin(t * 1.6) * 0.03;
       }
       // lock emblem
       const lockAmt = smoothStep01(isl.lock);
@@ -721,7 +715,7 @@ export class WorldMap {
       if (isl.lockGroup.visible) {
         isl.lockGroup.scale.setScalar(1.15 * lockAmt);
         isl.lockGroup.rotation.y = Math.sin(t * 0.8 + isl.phase) * 0.5;
-        isl.lockGroup.position.y = TOP + 3.8 + Math.sin(t * 1.4 + isl.phase) * 0.16 + isl.hover * 0.5;
+        isl.lockGroup.position.y = TOP + (isl.built.top ?? 4.2) - 0.7 + Math.sin(t * 1.4 + isl.phase) * 0.16 + isl.hover * 0.5;
       }
       // badge: billboard to the camera + grow in
       if (isl.info.completed) {
@@ -730,7 +724,7 @@ export class WorldMap {
         b.visible = true;
         const pop = easeOutBack(isl.badgeAmt);
         b.scale.setScalar(Math.max(0.001, pop) * 1.2);
-        b.position.y = TOP + 5.3 + Math.sin(t * 1.1 + isl.phase) * 0.14 + isl.hover * 0.5;
+        b.position.y = TOP + (isl.built.top ?? 4.2) + 0.6 + Math.sin(t * 1.1 + isl.phase) * 0.14 + isl.hover * 0.5;
         this.tmpV.copy(camera.position).sub(isl.root.position);
         b.rotation.y = Math.atan2(this.tmpV.x, this.tmpV.z);
         for (let i = 0; i < 3; i++) {
@@ -795,7 +789,6 @@ export class WorldMap {
     this.islands.length = 0;
     this.pickMeshes.length = 0;
     this.byId.clear();
-    this.sky = null;
     this.built = false;
   }
 }

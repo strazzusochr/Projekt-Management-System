@@ -1,10 +1,9 @@
 import * as THREE from 'three/webgpu';
 import {
-  atan2,
+  atan,
   attribute,
   dot,
   Fn,
-  float,
   mix,
   mx_noise_float,
   positionLocal,
@@ -138,8 +137,8 @@ export function makeMaterials() {
   const hover = uniform(0);
   const vc = attribute('color', 'vec3');
   const lum = dot(vc, vec3(0.299, 0.587, 0.114));
-  const frost = vec3(lum.mul(0.55).add(0.16)).add(vec3(0.18, 0.3, 0.44)).mul(0.9);
-  const lockK = lock.mul(0.92);
+  const frost = vec3(lum.mul(0.7).add(0.05)).add(vec3(0.05, 0.1, 0.19));
+  const lockK = lock.mul(0.88);
   const baseCol = mix(vc, frost, lockK);
   const rimBoost = vc.mul(hover.mul(0.32));
 
@@ -203,12 +202,12 @@ export function auroraMaterial(): THREE.MeshBasicNodeMaterial {
   const v = uv();
   const n = mx_noise_float(vec3(v.x.mul(9), time.mul(0.35), v.y.mul(1.5))).mul(0.5).add(0.5);
   const n2 = mx_noise_float(vec3(v.x.mul(22).add(time.mul(0.6)), 2, v.y.mul(0.5))).mul(0.5).add(0.5);
-  const rays = n.mul(0.7).add(n2.mul(0.5));
+  const rays = smoothstep(0.28, 0.85, n.mul(0.6).add(n2.mul(0.6)));
   const g = tslColor(new THREE.Color('#3dffa8'));
   const p = tslColor(new THREE.Color('#a45bff'));
-  const c = mix(g, p, smoothstep(0.25, 1.0, v.y)).mul(2.2);
+  const c = mix(g, p, smoothstep(0.3, 1.0, v.y)).mul(1.7);
   m.colorNode = c;
-  m.opacityNode = smoothstep(0.0, 0.18, v.y).mul(smoothstep(1.0, 0.45, v.y)).mul(rays).mul(smoothstep(0.0, 0.12, v.x)).mul(smoothstep(1.0, 0.88, v.x)).mul(0.85);
+  m.opacityNode = smoothstep(0.0, 0.18, v.y).mul(smoothstep(1.0, 0.45, v.y)).mul(rays).mul(smoothstep(0.0, 0.12, v.x)).mul(smoothstep(1.0, 0.88, v.x)).mul(0.55);
   m.positionNode = Fn(() => {
     const q = positionLocal.toVar();
     q.z.addAssign(sin(q.x.mul(0.42).add(time.mul(0.55)).add(q.y.mul(0.12))).mul(1.7));
@@ -223,7 +222,7 @@ export function auroraMaterial(): THREE.MeshBasicNodeMaterial {
 export function ringMaterial(col: THREE.ColorRepresentation): THREE.MeshBasicNodeMaterial {
   const m = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide });
   m.blending = THREE.AdditiveBlending;
-  const ang = atan2(positionLocal.y, positionLocal.x);
+  const ang = atan(positionLocal.y, positionLocal.x);
   const dash = smoothstep(-0.15, 0.35, sin(ang.mul(9)));
   const pulse = sin(time.mul(2.4)).mul(0.15).add(0.85);
   m.colorNode = tslColor(new THREE.Color(col)).mul(3.2).mul(pulse);
@@ -334,7 +333,8 @@ export function islandBase(kit: Kit, o: BaseOpts): void {
   const T = TOP;
   const prof: Array<[number, number]> = o.floating
     ? [[0.001, T], [R * 0.55, T + 0.03], [R * 0.93, T - 0.05], [R, T - 0.4], [R * 0.9, T - 1.4], [R * 0.72, T - 3.0], [R * 0.5, T - 5.0], [R * 0.28, T - 7.0], [R * 0.1, T - 8.6], [0.001, T - 9.2]]
-    : [[0.001, T], [R * 0.55, T + 0.03], [R * 0.92, T - 0.04], [R, T - 0.32], [R * 0.97, T - 0.9], [R * 0.86, T - 1.9], [R * 0.62, T - 2.9], [R * 0.3, T - 3.7], [0.001, T - 4.1]];
+    : [[0.001, T], [R * 0.55, T + 0.03], [R * 0.92, T - 0.04], [R, T - 0.32], [R * 1.0, T - 0.95], [R * 0.93, T - 1.9], [R * 0.72, T - 2.9], [R * 0.36, T - 3.7], [0.001, T - 4.1]];
+  prof.reverse(); // bottom -> top so the lathe faces point outwards
   const pts = new THREE.SplineCurve(prof.map(([x, y]) => new THREE.Vector2(x, y))).getPoints(o.floating ? 36 : 26).map((p) => new THREE.Vector2(Math.max(0.001, p.x), p.y));
   const g = weld(new THREE.LatheGeometry(pts, o.segments ?? 56));
   const pos = g.getAttribute('position');

@@ -30,12 +30,19 @@ export function n2(x: number, z: number): number {
   );
 }
 
+/** How far the ice edge bulges outwards along z (0 near the docks so the ramps stay straight). */
+export function edgeWobble(z: number): number {
+  const k = smooth(2.5, 7, Math.abs(z));
+  return k * Math.max(0, 0.4 + Math.sin(z * 0.63) * 0.3 + Math.sin(z * 1.7 + 1) * 0.18);
+}
+
 /** Terrain height of the ice shelf / snow field (mesh + gameplay share this). */
 export function terrainHeight(x: number, z: number): number {
   const ax = Math.abs(x);
   let h = BANK_Y;
-  if (ax < BANK_EDGE) {
-    const t = smooth(BANK_EDGE, 4.4, ax);
+  const edge = BANK_EDGE + edgeWobble(z);
+  if (ax < edge) {
+    const t = smooth(edge, edge - 1.6, ax);
     h = BANK_Y - t * 3.6;
   }
   // rolling drifts and ridges outside the play area

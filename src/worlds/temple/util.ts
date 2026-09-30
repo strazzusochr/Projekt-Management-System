@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
-import { Fn, attribute, color, hash, instanceIndex, mix, mx_fractal_noise_float, positionGeometry, positionLocal, positionWorld, sin, smoothstep, time, uniform, uv, vec2, vec3, vertexColor } from 'three/tsl';
-import { bake, merge, type Place, type Surface } from '../../characters/geo';
+import { Fn, attribute, color, hash, instanceIndex, mix, mx_fractal_noise_float, positionGeometry, positionLocal, positionWorld, sin, smoothstep, time, uniform, uv, vec3, vertexColor } from 'three/tsl';
+import { bake, merge, mottle, roundedBox, type Place, type Surface } from '../../characters/geo';
 
 /** Collects everything that has to be disposed together. */
 export class Bin {
@@ -14,6 +14,14 @@ export class Bin {
     this.items.length = 0;
   }
 }
+
+/** Cheap box: plain box for thin parts, 1-segment rounded box otherwise. */
+export function rbox(w: number, h: number, d: number, r = 0.05, _seg = 1): Geo {
+  void _seg;
+  if (Math.min(w, h, d) < 0.25) return new THREE.BoxGeometry(w, h, d);
+  return roundedBox(w, h, d, r, 1);
+}
+export const box = (w: number, h: number, d: number): Geo => new THREE.BoxGeometry(w, h, d);
 
 export const S = (col: THREE.ColorRepresentation, rough = 0.85, metal = 0, emit = 0): Surface => ({ color: col, rough, metal, emit });
 
@@ -29,10 +37,10 @@ export function vcMaterial(opts: { side?: THREE.Side; alphaTest?: number } = {})
 }
 
 /** Unlit vertex-coloured glow material with an adjustable brightness uniform. */
-export function glowVc(intensity: number, opts: { additive?: boolean; opacity?: number; side?: THREE.Side } = {}) {
+export function glowVc(intensity: number, opts: { additive?: boolean; opacity?: number; side?: THREE.Side; tint?: THREE.ColorRepresentation } = {}) {
   const k = uniform(intensity);
   const m = new THREE.MeshBasicNodeMaterial({ vertexColors: true });
-  m.colorNode = vertexColor().rgb.mul(k);
+  m.colorNode = opts.tint !== undefined ? vertexColor().rgb.mul(color(new THREE.Color(opts.tint))).mul(k) : vertexColor().rgb.mul(k);
   if (opts.side !== undefined) m.side = opts.side;
   if (opts.additive || (opts.opacity !== undefined && opts.opacity < 1)) {
     m.transparent = true;
@@ -46,8 +54,9 @@ export function glowVc(intensity: number, opts: { additive?: boolean; opacity?: 
 export type Geo = THREE.BufferGeometry;
 
 /** Bakes + merges a list of [geometry, surface, place] parts. */
-export function build(parts: Array<[Geo, Surface, Place?]>): Geo {
-  return merge(parts.map(([g, s, p]) => bake(g, s, p)));
+export type Part = [Geo, Surface, Place?] | [Geo];
+export function build(parts: Part[]): Geo {
+  return merge(parts.map((p) => (p.length === 1 ? p[0] : bake(p[0], p[1], p[2]))));
 }
 
 /** Instanced mesh from a list of matrices (+ optional colours). */
@@ -160,13 +169,46 @@ export function swayNode(strength = 0.12, speed = 1.4, height = 1.2) {
 }
 
 /** Scrolling fbm mist material for big horizontal planes. */
-export function mistMaterial(col: THREE.ColorRepresentation, opacity: number, scale: number, speed: [number, number], edgeFade: number) {
+export function mistMaterial(col: THREE.ColorRepresentation, opacity: number, scale: number, speed: [number, number], halfX: number, halfZ: number, cz: number) {
   const m = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide });
   const P = positionWorld.xz;
   const n = mx_fractal_noise_float(vec3(P.x.mul(scale).add(time.mul(speed[0])), P.y.mul(scale).add(time.mul(speed[1])), time.mul(0.05)), 3, 2.0, 0.5, 1.0);
   const d = smoothstep(-0.25, 0.55, n);
-  const edge = smoothstep(edgeFade, edgeFade * 0.35, P.x.abs().div(1.0)).mul(1);
+  const edge = smoothstep(halfX, halfX * 0.45, P.x.abs()).mul(smoothstep(halfZ, halfZ * 0.5, P.y.sub(cz).abs()));
   m.colorNode = color(new THREE.Color(col));
-  m.opacityNode = d.mul(opacity).mul(edge.max(0.0)).mul(smoothstep(0, 1, vec2(1, 1).x));
+  m.opacityNode = d.mul(opacity).mul(edge);
   return m;
+}
+
+/** Tapered cylinder between two points (limbs, shafts, ropes). */
+export function segment(a: [number, number, number], b: [number, number, number], r0: number, r1: number, surf: Surface, seg = 10): Geo {
+  const va = new THREE.Vector3(...a);
+  const vb = new THREE.Vector3(...b);
+  const dir = vb.clone().sub(va);
+  const len = Math.max(1e-4, dir.length());
+  const g = new THREE.CylinderGeometry(r1, r0, len, seg, 1);
+  g.translate(0, len / 2, 0);
+  const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  const mtxx = new THREE.Matrix4().compose(va, q, new THREE.Vector3(1, 1, 1));
+  return bake(g, surf, mtxx);
+}
+
+/** Moss creeping up from the ground + mottled stone variation (needs baked geometry). */
+export function weather(geo: Geo, seed = 1, moss: THREE.ColorRepresentation = '#4d7d38', mossH = 2.2, amt = 0.55, mott = 0.24): Geo {
+  mottle(geo, mott, 1.6, seed);
+  const pos = geo.getAttribute('position');
+  const colA = geo.getAttribute('color') as THREE.BufferAttribute;
+  const pb = geo.getAttribute('aPbr') as THREE.BufferAttribute;
+  const mc = new THREE.Color(moss);
+  const c = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) {
+    if (pb.getZ(i) > 0.01) continue;
+    const y = pos.getY(i);
+    const n = 0.55 + 0.45 * Math.sin(pos.getX(i) * 3.1 + pos.getZ(i) * 2.3 + seed);
+    const k = (1 - smooth(0, mossH, y)) * amt * n;
+    c.setRGB(colA.getX(i), colA.getY(i), colA.getZ(i)).lerp(mc, k);
+    colA.setXYZ(i, c.r, c.g, c.b);
+  }
+  colA.needsUpdate = true;
+  return geo;
 }

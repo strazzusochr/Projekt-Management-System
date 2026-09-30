@@ -20,7 +20,6 @@ import {
   uniform,
   uv,
   vec2,
-  vec3,
   vertexColor,
 } from 'three/tsl';
 import { bake, merge, type Place, type Surface } from '../../characters/geo';
@@ -28,7 +27,7 @@ import { bake, merge, type Place, type Surface } from '../../characters/geo';
 /** Accumulates baked (vertex-coloured) parts and merges them into ONE geometry / draw call. */
 export class Parts {
   private list: THREE.BufferGeometry[] = [];
-  add(geo: THREE.BufferGeometry, surf: Surface, place?: Place): this {
+  add(geo: THREE.BufferGeometry, surf: Surface, place?: Place | THREE.Matrix4): this {
     this.list.push(bake(geo, surf, place));
     return this;
   }
@@ -104,13 +103,16 @@ export function starShape(points: number, outer: number, inner: number): THREE.S
 /** Uniform handle for the world-wide wind strength (0..1.5). */
 export const windStrength = uniform(1);
 
-type ColorFn = (u: ReturnType<typeof uv>) => ReturnType<typeof vec3>;
+const mkFloat = () => uniform(0);
+export type FloatUniform = ReturnType<typeof mkFloat>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ColorFn = (u: any) => any;
 
 /**
  * Cloth (sails, banners, pennants): attached along the uv.x = 0 edge, the free end waves with wind.
  * `colorFn` paints the fabric procedurally from uv.
  */
-export function clothMaterial(o: { colorFn: ColorFn; amp: number; speed: number; flutter?: number; rough?: number; emissive?: number; strength?: ReturnType<typeof uniform<number>> }): THREE.MeshStandardNodeMaterial {
+export function clothMaterial(o: { colorFn: ColorFn; amp: number; speed: number; flutter?: number; rough?: number; emissive?: number; strength?: FloatUniform }): THREE.MeshStandardNodeMaterial {
   const strength = o.strength ?? windStrength;
   const m = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, roughness: o.rough ?? 0.85, metalness: 0 });
   const seed = hash(instanceIndex.toFloat().add(3.7)).mul(6.28);
@@ -143,7 +145,8 @@ export function sunBannerColor(bg: THREE.ColorRepresentation, fg: THREE.ColorRep
     const rays = smoothstep(0.45, 0.62, sin(a.mul(12)).mul(0.5).add(0.5)).mul(smoothstep(0.42, 0.26, r)).mul(smoothstep(0.18, 0.22, r));
     const disc = smoothstep(0.19, 0.17, r);
     const ring = smoothstep(0.24, 0.235, r).mul(smoothstep(0.205, 0.21, r));
-    let c = color(new THREE.Color(bg));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let c: any = color(new THREE.Color(bg));
     c = mix(c, color(new THREE.Color(fg)), rays.max(disc).max(ring));
     const border = smoothstep(0.06, 0.03, u.x.min(float(1).sub(u.x)).min(u.y).min(float(1).sub(u.y)));
     c = mix(c, color(new THREE.Color(edge)), border);
@@ -159,7 +162,8 @@ export function starBannerColor(bg: THREE.ColorRepresentation, fg: THREE.ColorRe
     const sr = mix(float(0.09), float(0.27), smoothstep(0.0, 1.0, sin(a.mul(2.5).add(1.5708)).abs().pow(1.6)));
     const star = smoothstep(0.012, 0.0, r.sub(sr));
     const dots = smoothstep(0.02, 0.0, length(fract(u.mul(vec2(6.0, 8.0))).sub(0.5)).sub(0.05)).mul(0.35);
-    let c = color(new THREE.Color(bg)).mul(float(1).sub(dots.mul(0.6)));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let c: any = color(new THREE.Color(bg)).mul(float(1).sub(dots.mul(0.6)));
     c = mix(c, color(new THREE.Color(fg)), star);
     const border = smoothstep(0.06, 0.03, u.x.min(float(1).sub(u.x)).min(u.y).min(float(1).sub(u.y)));
     c = mix(c, color(new THREE.Color(edge)), border);
@@ -207,7 +211,7 @@ export function fillInstances(mesh: THREE.InstancedMesh, items: Array<{ p: [numb
 }
 
 /** Emissive unlit material whose brightness is driven by a uniform. */
-export function glowUniformMat(col: THREE.ColorRepresentation, base = 3): { material: THREE.MeshBasicNodeMaterial; k: ReturnType<typeof uniform<number>> } {
+export function glowUniformMat(col: THREE.ColorRepresentation, base = 3): { material: THREE.MeshBasicNodeMaterial; k: FloatUniform } {
   const k = uniform(1);
   const m = new THREE.MeshBasicNodeMaterial();
   m.colorNode = color(new THREE.Color(col)).mul(k.mul(base));

@@ -13,8 +13,16 @@ page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') 
 page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`));
 const r = renderer === 'webgl' ? '&renderer=webgl' : '';
 const waitReady = async () => {
-  await page.waitForFunction(() => window.__RIVERBOUND_QA__?.isReady?.(), null, { timeout: 240000, polling: 500 });
-  await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle(240000));
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      await page.waitForFunction(() => window.__RIVERBOUND_QA__?.isReady?.(), null, { timeout: 240000, polling: 500 });
+      await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle(240000));
+      return;
+    } catch (e) {
+      if (!String(e).includes('context was destroyed') && !String(e).includes('navigation')) throw e;
+      await page.waitForTimeout(1500);
+    }
+  }
 };
 const t0 = Date.now();
 await page.goto(`${base}/?qa=1&mute=1&adaptive=0&quality=${quality}${r}`);

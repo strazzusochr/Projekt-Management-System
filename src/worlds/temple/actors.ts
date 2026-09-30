@@ -116,7 +116,6 @@ const SPECS: Record<string, { spec: HumanoidSpec; weapon: () => Geo; walk: numbe
       brows: { thickness: 1.0 },
       freckles: true,
       nose: 'button',
-      goatee: undefined,
       outfit: {
         top: { kind: 'armor', color: '#2f9a76', accent: '#1f6a55', trim: '#c8963e', length: 0.3, collar: 'none', sleeves: 'short', rough: 0.45, metal: 0.35 },
         bottom: { kind: 'pants', color: '#2a4a52' },
@@ -133,12 +132,28 @@ const SPECS: Record<string, { spec: HumanoidSpec; weapon: () => Geo; walk: numbe
   },
 };
 
+const qHand = new THREE.Quaternion();
+const qRoot = new THREE.Quaternion();
+const qLean = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.06, 0, -0.03));
+
 export function createGuardian(id: string, name: string): HumanoidActor {
   const d = SPECS[id]!;
-  const a = new HumanoidActor({ id, name, spec: d.spec, walkSpeed: d.walk, sitsInVehicle: true });
-  const w = d.weapon();
-  const m = a.attach(a.rig.handR, w, 'weapon');
-  m.rotation.x = 0.08;
+  let weapon: THREE.Mesh | null = null;
+  const a = new HumanoidActor({
+    id,
+    name,
+    spec: d.spec,
+    walkSpeed: d.walk,
+    sitsInVehicle: true,
+    // keep the staff / spear upright whatever the arm does (idle poses bend the elbow forward)
+    extra: (act) => {
+      if (!weapon) return;
+      act.rig.handR.getWorldQuaternion(qHand);
+      act.root.getWorldQuaternion(qRoot);
+      weapon.quaternion.copy(qHand).invert().multiply(qRoot).multiply(qLean);
+    },
+  });
+  weapon = a.attach(a.rig.handR, d.weapon(), 'weapon');
   return a;
 }
 

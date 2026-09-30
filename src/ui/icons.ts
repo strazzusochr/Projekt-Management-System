@@ -96,10 +96,12 @@ export function logoMark(size = 64): string {
 </svg>`;
 }
 
-/** Decorative wave band used on the boot screen. */
+/** Decorative wave band used on the boot screen (2400 units wide so a -50% shift loops seamlessly). */
 export function wavesSvg(): string {
-  return `<svg viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-  <path class="rb-wave rb-wave--a" d="M0 60c100 0 100-30 200-30s100 30 200 30 100-30 200-30 100 30 200 30 100-30 200-30 100 30 200 30v60H0z"/>
-  <path class="rb-wave rb-wave--b" d="M0 80c100 0 100-26 200-26s100 26 200 26 100-26 200-26 100 26 200 26 100-26 200-26 100 26 200 26v40H0z"/>
+  const a = 'c100 0 100-30 200-30s100 30 200 30'.repeat(6);
+  const b = 'c100 0 100-26 200-26s100 26 200 26'.repeat(6);
+  return `<svg viewBox="0 0 2400 120" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+  <path class="rb-wave rb-wave--a" d="M0 60${a}V120H0z"/>
+  <path class="rb-wave rb-wave--b" d="M0 82${b}V120H0z"/>
 </svg>`;
 }

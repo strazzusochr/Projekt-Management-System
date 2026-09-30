@@ -20,16 +20,16 @@ function makeNova(): HumanoidActor {
     spec: {
       height: H,
       build: { shoulders: 0.92, hips: 0.92, limbs: 0.92, legs: 1.06, head: 0.98 },
-      skin: '#d9a486',
+      skin: '#e2b092',
       eyes: { iris: '#19d9ff', size: 1.1, glow: 0.9 },
       hair: { style: 'spiky', color: '#0c1626', accent: '#19d9ff' },
       brows: { color: '#0c1626', thickness: 0.8, tilt: 0.12 },
       nose: 'small',
       lips: '#b8506a',
       outfit: {
-        top: { kind: 'suit', color: '#0a1424', accent: '#12324f', trim: '#19d9ff', glow: '#19d9ff', sleeves: 'long', collar: 'high', rough: 0.32, metal: 0.45 },
-        bottom: { kind: 'leggings', color: '#0a1424', rough: 0.4 },
-        shoes: { kind: 'magboots', color: '#0f1a2c', sole: '#19d9ff', glow: '#19d9ff' },
+        top: { kind: 'suit', color: '#14233c', accent: '#1d4a78', trim: '#19d9ff', glow: '#19d9ff', sleeves: 'long', collar: 'high', rough: 0.32, metal: 0.45 },
+        bottom: { kind: 'leggings', color: '#16263f', rough: 0.4 },
+        shoes: { kind: 'magboots', color: '#1b2c47', sole: '#19d9ff', glow: '#19d9ff' },
         gloves: '#0b1626',
         belt: '#19d9ff',
       },
@@ -94,9 +94,9 @@ function makeKai(): HumanoidActor {
       brows: { color: '#17110d', thickness: 1.1 },
       nose: 'button',
       outfit: {
-        top: { kind: 'jacket', color: '#262c38', accent: '#3a4152', trim: '#ff8a1e', glow: '#ff8a1e', sleeves: 'long', collar: 'high', rough: 0.6, metal: 0.15 },
-        bottom: { kind: 'pants', color: '#1b2029', rough: 0.7 },
-        shoes: { kind: 'sneakers', color: '#22262f', sole: '#ff8a1e', glow: '#ff8a1e' },
+        top: { kind: 'jacket', color: '#3a4258', accent: '#505b76', trim: '#ff8a1e', glow: '#ff8a1e', sleeves: 'long', collar: 'high', rough: 0.6, metal: 0.15 },
+        bottom: { kind: 'pants', color: '#2b3242', rough: 0.7 },
+        shoes: { kind: 'sneakers', color: '#3a4054', sole: '#ff8a1e', glow: '#ff8a1e' },
         gloves: '#15181e',
         belt: '#ff8a1e',
       },
@@ -118,13 +118,13 @@ function makeKai(): HumanoidActor {
   // visor + headset (on the head; face at +Z, eye line ≈ headR * 1.0)
   const r = H * 0.074;
   const visor = acc([
-    bake(new THREE.SphereGeometry(r * 1.06, 22, 10, -Math.PI * 0.42, Math.PI * 0.84, Math.PI * 0.4, Math.PI * 0.16), { color: '#ff8a1e', rough: 0.08, metal: 0.2, emit: 1.1 }, { p: [0, r * 1.0, 0.0], s: [1.0, 1.15, 1.0] }),
-    bake(torus(r * 1.03, r * 0.05, Math.PI * 0.95, 20, 5), dark, { p: [0, r * 1.18, 0], r: [Math.PI / 2, 0, -Math.PI * 0.975] }),
-    bake(torus(r * 1.03, r * 0.05, Math.PI * 0.95, 20, 5), dark, { p: [0, r * 0.82, 0], r: [Math.PI / 2, 0, -Math.PI * 0.975] }),
+    bake(new THREE.SphereGeometry(r * 1.06, 22, 10, Math.PI / 2 - Math.PI * 0.42, Math.PI * 0.84, Math.PI * 0.4, Math.PI * 0.16), { color: '#ff8a1e', rough: 0.08, metal: 0.2, emit: 1.1 }, { p: [0, r * 1.0, 0.0], s: [1.0, 1.15, 1.0] }),
+    bake(torus(r * 1.03, r * 0.05, Math.PI * 0.95, 20, 5), dark, { p: [0, r * 1.18, 0], r: [Math.PI / 2, 0, Math.PI * 0.025] }),
+    bake(torus(r * 1.03, r * 0.05, Math.PI * 0.95, 20, 5), dark, { p: [0, r * 0.82, 0], r: [Math.PI / 2, 0, Math.PI * 0.025] }),
   ]);
   actor.attach(rig.head, visor, 'visor');
   const headset = acc([
-    bake(torus(r * 1.12, r * 0.05, Math.PI, 20, 5), dark, { p: [0, r * 1.05, 0], r: [0, Math.PI / 2, 0] }),
+    bake(torus(r * 1.12, r * 0.05, Math.PI, 20, 5), dark, { p: [0, r * 1.0, 0] }),
     bake(cyl(r * 0.28, r * 0.28, r * 0.22, 14), dark, { p: [r * 1.12, r * 1.0, 0], r: [0, 0, Math.PI / 2] }),
     bake(cyl(r * 0.28, r * 0.28, r * 0.22, 14), dark, { p: [-r * 1.12, r * 1.0, 0], r: [0, 0, Math.PI / 2] }),
     bake(cyl(r * 0.16, r * 0.16, r * 0.05, 12), or, { p: [r * 1.24, r * 1.0, 0], r: [0, 0, Math.PI / 2] }),
@@ -185,9 +185,9 @@ function makeMara(): HumanoidActor {
       nose: 'round',
       lips: '#a83a66',
       outfit: {
-        top: { kind: 'coat', color: '#2b1838', accent: '#4a2a5f', trim: '#ff2fd0', glow: '#ff2fd0', sleeves: 'long', collar: 'high', length: 0.3, rough: 0.7, metal: 0.1 },
-        bottom: { kind: 'pants', color: '#1d1428', rough: 0.7 },
-        shoes: { kind: 'boots', color: '#181020', sole: '#ff2fd0', glow: '#ff2fd0' },
+        top: { kind: 'coat', color: '#4a2a66', accent: '#6a3d8c', trim: '#ff2fd0', glow: '#ff2fd0', sleeves: 'long', collar: 'high', length: 0.3, rough: 0.7, metal: 0.1 },
+        bottom: { kind: 'pants', color: '#34214c', rough: 0.7 },
+        shoes: { kind: 'boots', color: '#2b1c3e', sole: '#ff2fd0', glow: '#ff2fd0' },
         gloves: '#231530',
         belt: '#ff2fd0',
       },
@@ -259,9 +259,9 @@ function makeOskar(): HumanoidActor {
       beard: { style: 'full', color: '#bdbdb8' },
       nose: 'hooked',
       outfit: {
-        top: { kind: 'jacket', color: '#3b3a30', accent: '#5a5340', trim: '#ffc400', glow: '#ffc400', sleeves: 'long', collar: 'high', rough: 0.9 },
-        bottom: { kind: 'pants', color: '#2a2b26', rough: 0.9 },
-        shoes: { kind: 'boots', color: '#1c1b18', sole: '#ffc400', glow: '#ffc400' },
+        top: { kind: 'jacket', color: '#5a5a46', accent: '#7a7458', trim: '#ffc400', glow: '#ffc400', sleeves: 'long', collar: 'high', rough: 0.9 },
+        bottom: { kind: 'pants', color: '#40423a', rough: 0.9 },
+        shoes: { kind: 'boots', color: '#2c2b26', sole: '#ffc400', glow: '#ffc400' },
         gloves: '#2b2a24',
         belt: '#5a5340',
       },

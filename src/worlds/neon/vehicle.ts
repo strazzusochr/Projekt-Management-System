@@ -17,8 +17,6 @@ export function buildVehicle(env: Env): VehicleRig {
 
   // ───────── hull ─────────
   const hullMat = mat('#232a37', 0.42, 0.85);
-  const plateMat = mat('#161c26', 0.55, 0.6);
-  const hazardMat = mat('#e8b000', 0.55, 0.2);
   const frameMat = mat('#39445a', 0.35, 0.9);
 
   const hull = mergeG([
@@ -39,7 +37,7 @@ export function buildVehicle(env: Env): VehicleRig {
   // deck plating with grid lines (TSL)
   const deckMat = mat('#10151d', 0.5, 0.55);
   {
-    const g = uv().mul(vec3(1, 1, 1).xy).mul(8);
+    const g = uv().mul(8);
     const f = abs(fract(g).sub(0.5));
     const seam = smoothstep(0.44, 0.5, f.x.max(f.y));
     deckMat.colorNode = mix(color('#151b25'), color('#0a0e14'), seam);
@@ -173,7 +171,6 @@ export function buildVehicle(env: Env): VehicleRig {
   const lamps = new THREE.InstancedMesh(lampGeo, lampMat, 4);
   lamps.frustumCulled = false;
   const lampOff = new THREE.Color('#1a1e26');
-  const lampOn = new THREE.Color('#5cffef');
   for (let i = 0; i < 4; i++) {
     lamps.setMatrixAt(i, mtx([-0.6 + i * 0.16, DECK_Y + 0.82, 1.42]));
     lamps.setColorAt(i, lampOff);
