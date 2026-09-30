@@ -39,14 +39,14 @@ const factory: WorldFactory = async (ctx): Promise<LevelWorld> => {
   scene.add(sky);
   bin.add(sky.geometry);
   bin.add(sky.material as THREE.Material);
-  const disposeEnv = applyEnvironment(renderer, scene, sky, 0.85);
-  setupFog(scene, { color: '#dcd9b6', density: 0.0085, heightDensity: 0.012, height: 1.7 });
+  const disposeEnv = applyEnvironment(renderer, scene, sky, 0.45);
+  setupFog(scene, { color: '#9fb07a', density: 0.004, heightDensity: 0.006, height: 1.2 });
   createLightRig(scene, {
     hemiSky: '#bcd4ef',
     hemiGround: '#5f7a3c',
-    hemiIntensity: 0.95,
+    hemiIntensity: 0.5,
     sunColor: '#ffd9a0',
-    sunIntensity: 3.1,
+    sunIntensity: 2.7,
     sunDir: SUN.clone(),
     shadowArea: 34,
     shadowCenter: new THREE.Vector3(0, 0, -6),
@@ -179,14 +179,14 @@ const factory: WorldFactory = async (ctx): Promise<LevelWorld> => {
     scene,
     look: {
       toneMapping: 'aces',
-      exposure: 1.05,
+      exposure: 0.88,
       bloom: { strength: 0.45, radius: 0.5, threshold: 0.9 },
       ao: { radius: 0.5, intensity: 0.9 },
       vignette: 0.4,
-      saturation: 1.08,
+      saturation: 1.38,
       gain: [1.04, 1.0, 0.94],
       lift: [0.01, 0.008, 0.0],
-      contrast: 1.05,
+      contrast: 1.2,
     },
     banks,
     vehicle: boat.rig,

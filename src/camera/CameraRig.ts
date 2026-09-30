@@ -97,7 +97,32 @@ export class CameraRig {
   }
 
   setLimits(limits: CameraLimits): void {
-    this.limits = limits;
+    // full 360° orbit, at least 20x zoom range and generous panning for free exploration
+    const minRadius = Math.min(limits.minRadius, 3);
+    const maxRadius = Math.max(limits.maxRadius, minRadius * 22);
+    const pad = new THREE.Vector3(22, 6, 22);
+    this.limits = {
+      minRadius,
+      maxRadius,
+      minPolar: Math.min(limits.minPolar, 0.15),
+      maxPolar: Math.max(limits.maxPolar, 1.48),
+      targetMin: limits.targetMin.clone().sub(pad),
+      targetMax: limits.targetMax.clone().add(pad),
+    };
+    this.clampGoal();
+  }
+
+  /** Continuous keyboard control: x = strafe, z = forward, rot = orbit, zoom (+ out), tilt. */
+  keyMove(dt: number, x: number, z: number, rot: number, zoom: number, tilt: number): void {
+    if (!x && !z && !rot && !zoom && !tilt) return;
+    this.takeControl();
+    const speed = Math.max(3, this.goal.radius * 0.9);
+    const az = this.goal.azimuth;
+    this.goal.target.x += (Math.cos(az) * x - Math.sin(az) * z) * speed * dt;
+    this.goal.target.z += (-Math.sin(az) * x - Math.cos(az) * z) * speed * dt;
+    this.goal.azimuth += rot * 1.7 * dt;
+    this.goal.radius *= Math.exp(zoom * 1.5 * dt);
+    this.goal.polar += tilt * 0.9 * dt;
     this.clampGoal();
   }
 

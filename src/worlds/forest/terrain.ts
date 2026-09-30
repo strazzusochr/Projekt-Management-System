@@ -88,8 +88,8 @@ function terrainColor(x: number, z: number, h: number, slope: number, out: THREE
   out.lerp(ROCK, sstep(0.55, 1.1, slope) * 0.8);
   // waterfall ledge is rocky
   out.lerp(ROCK, (1 - sstep(1.0, 3.4, Math.abs(z - FALL_Z))) * 0.7);
-  tmp.setScalar(0.88 + n2 * 0.24);
-  out.multiply(tmp);
+  // (out may alias the module-level tmp colour, so never reuse tmp here)
+  out.multiplyScalar(0.88 + n2 * 0.24);
   void h;
   return out;
 }

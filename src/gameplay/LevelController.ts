@@ -76,9 +76,23 @@ export class LevelController implements PointerHandler {
     return this.world.actors.get(id)!;
   }
 
+  /**
+   * Clean formation: figures stand side by side (seen from the camera) in a line leading away
+   * from the dock; more than four figures form two neat rows (couples stand one behind the other).
+   */
   private slotFor(id: string, side: Side): THREE.Vector3 {
     const bank = this.world.banks[side];
-    return bank.slots[this.model.indexOf(id) % bank.slots.length]!;
+    const i = this.model.indexOf(id);
+    const n = this.model.n;
+    const sign = side === 0 ? -1 : 1;
+    const edge = Math.max(Math.abs(bank.dockPoint.x) + 1.8, 7.2);
+    const twoRows = n > 4;
+    const col = twoRows ? Math.floor(i / 2) : i;
+    const row = twoRows ? i % 2 : 0;
+    const spacing = twoRows ? 1.5 : 1.4;
+    const x = sign * (edge + col * spacing);
+    const z = bank.dockPoint.z + (twoRows ? (row === 0 ? 1.1 : -0.9) : 1.2);
+    return new THREE.Vector3(x, 0, z);
   }
 
   private freeSeat(id: string): number {

@@ -282,6 +282,7 @@ export class App {
       this.audio.playAmbience(world.ambience);
       this.screen = 'level';
       this.ui.hideLoading();
+      this.ui.toast('info', 'Kamera', 'WASD / Pfeiltasten: bewegen · Q / E: 360° drehen · R / F oder Mausrad: zoomen · T / G: neigen · C: zurücksetzen', 7000);
       this.busyLoading = false;
       const seen = this.save.snapshot.seenIntros.includes(id);
       const skip = this.save.settings.skipSeenIntros && seen;
@@ -401,7 +402,30 @@ export class App {
     else if (this.map) this.post.configure(this.map.scene, this.rig.camera, this.renderer.preset, this.map.look);
   }
 
+  private keys = new Set<string>();
+
+  private keyboardCamera(dt: number): void {
+    const k = this.keys;
+    if (!k.size || this.ui.isModalOpen) return;
+    const on = (...codes: string[]) => (codes.some((c) => k.has(c)) ? 1 : 0);
+    const x = on('KeyD', 'ArrowRight') - on('KeyA', 'ArrowLeft');
+    const z = on('KeyW', 'ArrowUp') - on('KeyS', 'ArrowDown');
+    const rot = on('KeyE') - on('KeyQ');
+    const zoom = on('KeyF', 'PageDown', 'Minus', 'NumpadSubtract') - on('KeyR', 'PageUp', 'Equal', 'NumpadAdd', 'BracketRight');
+    const tilt = on('KeyG') - on('KeyT');
+    this.rig.keyMove(dt, x, z, rot, zoom, tilt);
+  }
+
   private installKeyboard(): void {
+    const camKeys = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyT', 'KeyG', 'PageUp', 'PageDown', 'Minus', 'Equal', 'NumpadAdd', 'NumpadSubtract', 'BracketRight'];
+    window.addEventListener('keydown', (e) => {
+      if (camKeys.includes(e.code) && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement)) {
+        this.keys.add(e.code);
+        if (e.code.startsWith('Arrow') || e.code.startsWith('Page')) e.preventDefault();
+      }
+    });
+    window.addEventListener('keyup', (e) => this.keys.delete(e.code));
+    window.addEventListener('blur', () => this.keys.clear());
     window.addEventListener('keydown', (e) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
       const lvl = this.level;
@@ -450,6 +474,7 @@ export class App {
     this.elapsed += dt;
     this.fps = this.fps * 0.93 + (1000 / Math.max(1, dtMs)) * 0.07;
     this.input.update();
+    this.keyboardCamera(dt);
     if (this.screen === 'map' && this.map) this.map.update(dt, this.elapsed, this.rig.camera);
     if ((this.screen === 'level' || this.screen === 'loading') && this.level) this.level.update(dt, this.elapsed, this.rig.camera);
     this.rig.update(dt);
