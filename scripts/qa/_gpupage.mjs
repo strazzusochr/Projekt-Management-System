@@ -1,0 +1,10 @@
+import { chromium } from '@playwright/test';
+const args = process.argv.slice(2);
+const exe = process.env.EXE === 'shell' ? '/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell' : '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const browser = await chromium.launch({ executablePath: exe, headless: !process.env.HEADED, args });
+const page = await browser.newPage();
+await page.goto('chrome://gpu');
+await page.waitForTimeout(2500);
+const txt = await page.evaluate(() => { const r = document.querySelector('info-view'); return (r?.shadowRoot ?? document.body).textContent; });
+console.log(txt.replace(/\n\s*\n/g, '\n').slice(0, +(process.env.MAX ?? 6000)));
+await browser.close();

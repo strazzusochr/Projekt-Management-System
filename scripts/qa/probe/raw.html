@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Riverbound QA – Roh-WebGPU-Probe</title>
+    <style>
+      html, body { margin: 0; background: #0b1016; color: #d8e2ec; font: 12px/1.4 ui-monospace, monospace; }
+      #result { white-space: pre-wrap; padding: 8px; }
+      canvas { position: fixed; right: 8px; top: 8px; width: 256px; height: 256px; }
+    </style>
+  </head>
+  <body>
+    <!--
+      Roh-WebGPU ohne three.js, um Device-Lost-Ursachen einzugrenzen.
+      Parameter: fallback=1 (forceFallbackAdapter), pp=low|high (powerPreference),
+                 order=offscreen,canvas (Reihenfolge der Stufen; Default offscreen,canvas),
+                 frames=<n> (Canvas-Frames, Default 5), alpha=opaque|premultiplied
+      Ergebnis: window.__PROBE_RESULT__ / window.__PROBE_DONE__
+    -->
+    <pre id="result">läuft…</pre>
+    <script type="module" src="./raw.ts"></script>
+  </body>
+</html>

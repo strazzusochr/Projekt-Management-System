@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Riverbound QA – GPU-/Renderer-Probe</title>
+    <style>
+      html, body { margin: 0; padding: 0; background: #0b1016; color: #d8e2ec; font: 12px/1.4 ui-monospace, monospace; overflow: hidden; }
+      #stage { position: fixed; inset: 0; }
+      #stage canvas { display: block; }
+      #result { position: fixed; left: 8px; top: 8px; max-width: 46vw; max-height: 96vh; overflow: auto; margin: 0;
+                background: rgba(0, 0, 0, 0.55); padding: 6px 8px; border-radius: 4px; white-space: pre-wrap; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <!--
+      QA-Probe (nicht Teil des Spiels). Aufruf:
+        http://localhost:5199/scripts/qa/probe/index.html              -> WebGPURenderer, automatische Backend-Wahl
+        http://localhost:5199/scripts/qa/probe/index.html?renderer=webgl -> forceWebGL: true
+      Weitere Parameter: frames=<n> (Messframes, Default 60), w=<px>, h=<px> (Default 1280x720),
+                         bloom=0, shadows=0, hud=0 (Ergebnis-Overlay ausblenden),
+                         envOnly=1 (nur Adapter-/Kontext-Erkennung, kein Rendering),
+                         sync=readpixels|finish (WebGL-Synchronisation für Frame-Zeiten, Default readpixels)
+      Ergebnis: window.__PROBE_RESULT__ (und window.__PROBE_DONE__ = true)
+    -->
+    <div id="stage"></div>
+    <pre id="result">Probe läuft…</pre>
+    <script type="module" src="./probe.ts"></script>
+  </body>
+</html>
