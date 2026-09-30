@@ -4,7 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0b1016" />
+    <meta name="description" content="Riverbound – Fünf Ufer: ein 3D-Rätselspiel um klassische Flussüberquerungen in fünf Welten." />
     <title>Riverbound – Fünf Ufer</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #0b1016; overflow: hidden; overscroll-behavior: none; }
+      body { -webkit-font-smoothing: antialiased; touch-action: none; user-select: none; -webkit-user-select: none; }
+      #app, .stage { position: fixed; inset: 0; }
+      .stage canvas { display: block; width: 100%; height: 100%; outline: none; }
+      .ui-root { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+      .fatal { position: fixed; inset: 0; display: grid; place-content: center; gap: 12px; padding: 24px; color: #f4efe6; font: 16px/1.5 system-ui, sans-serif; text-align: center; background: radial-gradient(circle at 50% 30%, #1d2a38, #0b1016); }
+      .fatal pre { white-space: pre-wrap; opacity: .7; max-width: 640px; }
+      .fatal button { justify-self: center; padding: 10px 22px; border-radius: 10px; border: 1px solid #c9a45a; background: #1e2b36; color: #f4efe6; font-size: 16px; cursor: pointer; }
+    </style>
   </head>
   <body>
     <div id="app"></div>
