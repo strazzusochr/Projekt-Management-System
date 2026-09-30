@@ -1,8 +1,11 @@
 import * as THREE from 'three/webgpu';
-import { Fn, clamp, color, exp, float, mix, mx_noise_float, normalize, positionLocal, pow, sin, smoothstep, time, uv, vec2, vec3 } from 'three/tsl';
+import { Fn, clamp, color, exp, float, mix, mx_noise_float, normalize, positionLocal, pow, sin, smoothstep, time, uniform, uv, vec2, vec3 } from 'three/tsl';
 import type { QualityPreset } from '../../render/quality';
 import { rng } from '../../world/kit';
 import type { Disposer } from './common';
+
+/** 0 = calm sky, 1 = celebration surge (all curtains flare). */
+export const auroraBoost = uniform(0);
 
 interface RibbonSpec {
   /** arc centre in the XZ plane (mesh origin) */
@@ -136,6 +139,7 @@ function buildRibbonMaterial(s: RibbonSpec, cheap: boolean): THREE.MeshBasicNode
     .mul(pulse)
     .mul(breathe)
     .mul(ends)
+    .mul(auroraBoost.mul(0.9).add(1))
     .mul(s.strength);
   m.colorNode = col.mul(I);
   return m;

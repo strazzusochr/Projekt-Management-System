@@ -9,7 +9,7 @@ const W = 0.98; // half width
 const D = 0.52; // depth below rim line
 
 function rimY(u: number): number {
-  return 0.34 + 0.72 * Math.pow(Math.abs(u), 2.4);
+  return 0.34 + 0.55 * Math.pow(Math.abs(u), 2.4);
 }
 
 /** Point on the hull surface for u in -1..1 along the keel and phi in -pi/2..pi/2 across. */

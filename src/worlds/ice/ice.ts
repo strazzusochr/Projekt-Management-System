@@ -358,7 +358,7 @@ export function createCrystals(clusters: CrystalCluster[], quality: QualityPrese
 // ───────────────────────── ice cave ─────────────────────────
 
 /** Ice cave entrance with glowing interior. Local +Z faces the viewer, floor at y = 0. */
-export function createIceCave(scale: number, seed: number, quality: QualityPreset, d: Disposer, iceMat: THREE.Material): THREE.Group {
+export function createIceCave(scale: number, seed: number, quality: QualityPreset, d: Disposer): { group: THREE.Group; arch: THREE.BufferGeometry } {
   const g = new THREE.Group();
   g.name = 'iceCave';
   const r = rng(Math.floor(seed * 100));
@@ -400,9 +400,7 @@ export function createIceCave(scale: number, seed: number, quality: QualityPrese
     cone.translate(Math.cos(a) * W * 0.44, Math.sin(a) * H * 0.78 - 0.25 * scale, 0.55 * scale);
     parts.push(finishIce(cone, () => iceShade(0.85, 0)));
   }
-  const mesh = new THREE.Mesh(d.add(mergeIce(parts)), iceMat);
-  mesh.castShadow = false;
-  g.add(mesh);
+  const arch = mergeIce(parts);
 
   // glowing interior: layered additive discs give a deep tunnel feeling
   const inGeo = d.add(new THREE.PlaneGeometry(W * 0.95, H * 0.98));
@@ -446,5 +444,5 @@ export function createIceCave(scale: number, seed: number, quality: QualityPrese
   spill.renderOrder = 3;
   g.add(spill);
   void quality;
-  return g;
+  return { group: g, arch };
 }

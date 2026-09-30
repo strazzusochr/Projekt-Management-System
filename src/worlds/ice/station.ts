@@ -32,7 +32,7 @@ export function createStation(ctx: WorldCtx): Station {
     const stripe = step(0.955, fract(uv().y.mul(h / 3.0))).mul(0.8).add(step(0.965, fract(uv().x.mul(w / 3.0))).mul(0.5));
     m.colorNode = mix(color(new THREE.Color('#2c343f')), color(new THREE.Color('#080b10')), hole);
     m.emissiveNode = color(new THREE.Color('#ff7418'))
-      .mul(hole.mul(float(0.45).add(wave.mul(0.55))).mul(0.85).add(stripe.mul(2.0)))
+      .mul(hole.mul(float(0.4).add(wave.mul(0.6))).mul(0.3).add(stripe.mul(1.7)))
       .mul(heat);
     return m;
   };
@@ -186,6 +186,18 @@ export function createStation(ctx: WorldCtx): Station {
   }
   // supply stacks
   for (let i = 0; i < 3; i++) B.rbox(0.8, 0.6, 0.7, 0.04, { color: i % 2 ? '#2c5f8f' : '#c8631c', rough: 0.6 }, { p: [12.2 + (i % 2) * 0.05, TOP + 0.3 + (i > 1 ? 0.6 : 0), -7.8 + i * 0.0], r: [0, 0.1 * i, 0] });
+
+  // ── solar array behind the platform ──
+  for (let i = 0; i < 3; i++) {
+    const sx = 19.2;
+    const sz = -6.4 + i * 3.6;
+    const sy = groundHeight(sx, sz);
+    B.rbox(0.08, 1.2, 3.1, 0.02, { color: '#0f1c36', rough: 0.22, metal: 0.55 }, { p: [sx, sy + 1.05, sz], r: [0, 0, 0.55] });
+    for (let k = 1; k < 4; k++) B.box(0.09, 1.2, 0.03, { color: '#6d86ad', rough: 0.4, metal: 0.6 }, { p: [sx + 0.004, sy + 1.05, sz - 1.55 + k * 0.775], r: [0, 0, 0.55] });
+    B.rod([sx + 0.35, sy + 0.2, sz - 1.2], [sx - 0.1, sy + 1.3, sz - 1.2], 0.035, S.darkSteel, 5);
+    B.rod([sx + 0.35, sy + 0.2, sz + 1.2], [sx - 0.1, sy + 1.3, sz + 1.2], 0.035, S.darkSteel, 5);
+    B.box(0.5, 0.08, 0.05, i === 1 ? S.green(2.0) : S.warm(2.0), { p: [sx + 0.45, sy + 0.25, sz] });
+  }
 
   const staticGeo = d.add(B.build());
   const mesh = new THREE.Mesh(staticGeo, d.add(createPropMaterial({ snow: 0.9 })));

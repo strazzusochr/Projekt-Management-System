@@ -158,8 +158,9 @@ export function createFerry(o: { quality: QualityPreset; allowLight: boolean; di
   }
   for (let i = 0; i < 5; i++) B.box(0.05, 0.02, 0.02, i % 2 ? S.warm(2.2) : S.green(2.2), { p: [-0.36 + i * 0.09, dk + 0.5, -0.935] });
   // drum housing + guide rollers
-  B.box(0.95, 0.1, 0.42, S.darkSteel, { p: [0, dk + 0.68, -1.62] });
-  for (const sx of [-1, 1]) B.box(0.06, 0.5, 0.42, S.darkSteel, { p: [sx * 0.42, dk + 0.86, -1.62] });
+  B.box(0.95, 0.1, 0.42, S.darkSteel, { p: [0, dk + 0.68, -1.22] });
+  for (const sx of [-1, 1]) B.box(0.06, 0.5, 0.42, S.darkSteel, { p: [sx * 0.42, dk + 0.86, -1.22] });
+  B.rod([0, dk + 1.0, -1.22], [0, dk + 2.0, -1.6], 0.012, { color: '#b7c2d0', rough: 0.35, metal: 0.9 }, 4);
   // ── mast with trolley (rides the fixed guide cable) ──
   B.cyl(0.05, 0.07, 2.0, S.steel, { p: [0, dk + 1.0, -1.62] }, 10);
   B.cyl(0.02, 0.02, 1.55, S.darkSteel, { p: [-0.5, dk + 1.05, -1.62], r: [0, 0, 0.45] }, 6);
@@ -211,7 +212,7 @@ export function createFerry(o: { quality: QualityPreset; allowLight: boolean; di
     const hole = step(0.2, f.x).mul(step(0.2, f.y));
     const breathe = float(0.8).add(mx_noise_float(vec3(uv().mul(6), time.mul(0.4))).mul(0.25));
     deckMat.colorNode = mix(color(new THREE.Color('#252d38')), color(new THREE.Color('#06090d')), hole);
-    deckMat.emissiveNode = color(new THREE.Color('#ff7a1c')).mul(hole).mul(breathe).mul(heat).mul(1.15);
+    deckMat.emissiveNode = color(new THREE.Color('#ff7a1c')).mul(hole).mul(breathe).mul(heat).mul(0.55);
   }
   const deckGeo = d.add(new THREE.PlaneGeometry(3.0, 3.44));
   deckGeo.rotateX(-Math.PI / 2);
@@ -223,7 +224,7 @@ export function createFerry(o: { quality: QualityPreset; allowLight: boolean; di
 
   // ── winch drum (rotates) ──
   const drumGroup = new THREE.Group();
-  drumGroup.position.set(0, dk + 0.9, -1.62);
+  drumGroup.position.set(0, dk + 0.9, -1.22);
   const DB = new PropBuilder();
   DB.cyl(0.2, 0.2, 0.36, S.steel, { r: [Math.PI / 2, 0, 0] }, 18);
   for (const sz of [-1, 1]) DB.cyl(0.27, 0.27, 0.03, S.darkSteel, { p: [0, 0, sz * 0.19], r: [Math.PI / 2, 0, 0] }, 18);

@@ -1,7 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { Fn, color, float, mix, positionLocal, sin, smoothstep, time, uniform, uv, vec3 } from 'three/tsl';
 import { rockGeometry } from '../../world/kit';
-import { bake, lathe, latheShell, merge } from '../../characters/geo';
+import { lathe, latheShell, merge } from '../../characters/geo';
 import { BANK_Y, PropBuilder, S, createPropMaterial, groundHeight, type WorldCtx } from './common';
 import { makeSignTexture, type HaloSpec } from './fx';
 
@@ -225,22 +225,25 @@ export function createCamp(ctx: WorldCtx): Camp {
     halos.push({ p: new THREE.Vector3(fire.x, fb + 1.05, fire.z), color: '#ff8a2a', size: 3.4, intensity: 1.2, flicker: 0.5 });
   }
 
-  // ── rocks and a wind-shaped ice boulder wall behind the camp ──
-  const rockMat = d.add(createPropMaterial({ snow: 1 }));
-  const rockGroup = new THREE.Group();
-  const rr = (n: number) => Math.abs(Math.sin(n * 12.9898) * 43758.5453) % 1;
-  for (let i = 0; i < 9; i++) {
-    const x = -20.5 - rr(i) * 9;
-    const z = -12 + i * 3.1 + rr(i + 7) * 2;
-    const geo = d.add(bake(rockGeometry(1.2 + rr(i + 3) * 1.6, i + 1, 2, 0.75), { color: i % 2 ? '#2b364b' : '#232d41', rough: 0.9 }));
-    const mesh = new THREE.Mesh(geo, rockMat);
-    mesh.position.set(x, gy(x, z) + 0.1, z);
-    mesh.rotation.y = rr(i + 11) * 6;
-    mesh.castShadow = false;
-    mesh.receiveShadow = true;
-    rockGroup.add(mesh);
+  // ── rocks: a snow-dusted boulder field behind the camp (one merged mesh) ──
+  {
+    const RB = new PropBuilder();
+    const rr = (n: number) => Math.abs(Math.sin(n * 12.9898) * 43758.5453) % 1;
+    for (let i = 0; i < 11; i++) {
+      const x = -21.5 - rr(i) * 10;
+      const z = -14 + i * 2.8 + rr(i + 7) * 2;
+      RB.add(rockGeometry(1.2 + rr(i + 3) * 1.6, i + 1, 2, 0.75), { color: i % 2 ? '#2b364b' : '#232d41', rough: 0.9 }, { p: [x, gy(x, z) + 0.1, z], r: [0, rr(i + 11) * 6, 0] });
+    }
+    for (let i = 0; i < 8; i++) {
+      const x = -9.5 - rr(i + 40) * 3.5 - i * 0.2;
+      const z = 14 + rr(i + 50) * 9;
+      RB.add(rockGeometry(0.5 + rr(i + 60) * 0.7, i + 21, 1, 0.7), { color: '#2a3549', rough: 0.9 }, { p: [x, gy(x, z) + 0.05, z], r: [0, rr(i + 70) * 6, 0] });
+    }
+    const rockMesh = new THREE.Mesh(d.add(RB.build()), d.add(createPropMaterial({ snow: 1 })));
+    rockMesh.receiveShadow = true;
+    rockMesh.name = 'camp:rocks';
+    group.add(rockMesh);
   }
-  group.add(rockGroup);
 
   // static merged geometry
   const staticGeo = d.add(B.build());
@@ -286,6 +289,32 @@ export function createCamp(ctx: WorldCtx): Camp {
     halos.push({ p: new THREE.Vector3(dish.position.x, dish.position.y + 1.9, dish.position.z + 1.0), color: '#ff5030', size: 0.5, intensity: 0.4 });
   }
   group.add(dish);
+
+  // ── weather mast with spinning anemometer ──
+  const anemo = new THREE.Group();
+  {
+    const wx = -18.6;
+    const wz = -6.6;
+    const wb = gy(wx, wz);
+    const WB = new PropBuilder();
+    WB.cyl(0.03, 0.045, 3.3, S.steel, { p: [wx, wb + 1.65, wz] }, 6);
+    WB.rbox(0.42, 0.34, 0.26, 0.03, S.white, { p: [wx + 0.18, wb + 1.2, wz] });
+    WB.box(0.3, 0.06, 0.02, S.cyan(2.2), { p: [wx + 0.18, wb + 1.26, wz + 0.135] });
+    WB.rod([wx, wb + 3.0, wz], [wx + 0.6, wb + 3.0, wz], 0.014, S.steel, 4);
+    WB.cone(0.05, 0.22, S.red, { p: [wx + 0.72, wb + 3.0, wz], r: [0, 0, -Math.PI / 2] }, 6);
+    WB.box(0.2, 0.16, 0.012, S.red, { p: [wx - 0.05, wb + 3.0, wz] });
+    group.add(new THREE.Mesh(d.add(WB.build()), d.add(createPropMaterial({ snow: 0.4 }))));
+    const AB = new PropBuilder();
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      AB.rod([0, 0, 0], [Math.cos(a) * 0.32, 0, Math.sin(a) * 0.32], 0.012, S.steel, 4);
+      AB.add(new THREE.SphereGeometry(0.08, 10, 6, 0, Math.PI), S.orange, { p: [Math.cos(a) * 0.32, 0, Math.sin(a) * 0.32], r: [0, -a + Math.PI / 2, 0] });
+    }
+    AB.cyl(0.03, 0.03, 0.08, S.darkSteel, { p: [0, -0.04, 0] }, 6);
+    anemo.add(new THREE.Mesh(d.add(AB.build()), d.add(createPropMaterial({ snow: 0.1 }))));
+    anemo.position.set(wx, wb + 3.35, wz);
+    group.add(anemo);
+  }
 
   // ── blinking aviation lights (mast) ──
   const blink = uniform(1);
@@ -354,6 +383,7 @@ export function createCamp(ctx: WorldCtx): Camp {
     update(dt, t) {
       const yaw = (dish.userData as { yaw: THREE.Group }).yaw;
       const tilt = (dish.userData as { tilt: THREE.Group }).tilt;
+      anemo.rotation.y += dt * (4.5 + Math.sin(t * 0.4) * 2);
       yaw.rotation.y += dt * 0.11;
       tilt.rotation.x = -0.9 + Math.sin(t * 0.13) * 0.16;
       // aviation blink: 1.4 s cycle, short flash

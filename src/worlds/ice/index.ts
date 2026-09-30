@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu';
 import type { BankLayout, LevelWorld, WorldBuildContext, WorldFactory } from '../../world/types';
 import { createLightRig, createParticles, createSkyDome, setupFog } from '../../world/kit';
 import type { WorldLook } from '../../render/PostFX';
-import { createAurora } from './aurora';
+import { auroraBoost, createAurora } from './aurora';
 import { createBackdrop } from './backdrop';
 import { createCamp } from './camp';
 import { createCast, createLeader } from './cast';
@@ -281,6 +281,8 @@ const factory: WorldFactory = async (bctx: WorldBuildContext): Promise<LevelWorl
   leader.actor.lookTarget = lookCur;
 
   let fireSeed = 0;
+  let boostGoal = 0;
+  let boostT = 0;
   const world: LevelWorld = {
     scene,
     look: LOOK,
@@ -317,6 +319,12 @@ const factory: WorldFactory = async (bctx: WorldBuildContext): Promise<LevelWorl
       station.update(dt, t);
       drones.update(dt, t);
       robot.update(dt, t);
+      // win celebration: the whole sky flares up for a few seconds
+      if (boostT > 0) {
+        boostT -= dt;
+        if (boostT <= 0) boostGoal = 0;
+      }
+      auroraBoost.value += (boostGoal - auroraBoost.value) * (1 - Math.exp(-dt * 1.4));
       // aurora-tinted fill light breathes with the sky
       if (rig.fill) {
         rig.fill.intensity = 0.42 * (0.82 + 0.18 * Math.sin(t * 0.31) + 0.06 * Math.sin(t * 0.83));
@@ -342,6 +350,14 @@ const factory: WorldFactory = async (bctx: WorldBuildContext): Promise<LevelWorl
         lanternLight.position.copy(lanternPos).add(new THREE.Vector3(0, 0.05, 0));
         lanternLight.intensity = 14 * (0.92 + 0.05 * Math.sin(t * 9.1) + 0.03 * Math.sin(t * 15.3));
       }
+    },
+    onCrossingStart() {
+      leaderTimer = Math.min(leaderTimer, 1.4);
+    },
+    onWin() {
+      boostGoal = 1;
+      boostT = 9;
+      leader.actor.react('cheer');
     },
     dispose() {
       disposeEnv();

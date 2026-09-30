@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu';
-import { Fn, hash, instanceIndex, positionLocal, sin, time, vec3 } from 'three/tsl';
+import { Fn, attribute, cos, hash, instanceIndex, positionLocal, sin, time, vec3 } from 'three/tsl';
 import { rng } from '../../world/kit';
 import { WATER_Y, terrainHeight, type WorldCtx } from './common';
 import {
@@ -31,33 +31,50 @@ export function createBackdrop(ctx: WorldCtx): Backdrop {
   const glacierMat = d.add(createIceMaterial({ glow: 0.75, rough: 0.28, snow: 0.8 }));
   const r = rng(90210);
 
-  // ── icebergs drifting in the lead ──
-  const bergs: Array<{ mesh: THREE.Mesh; base: THREE.Vector3; seed: number; rot: number }> = [];
-  const bergDefs: Array<[number, number, number]> = [
-    // x, z, radius
-    [-2.6, -13.5, 2.2],
-    [3.1, -21, 3.1],
-    [-1.8, -31, 4.4],
-    [2.0, -44, 5.4],
-    [-3.0, -58, 6.4],
-    [0.5, -76, 8.0],
-    [3.4, -96, 9.5],
-    [-3.6, 11.5, 1.4],
-    [3.7, 15.5, 1.9],
-    [-3.3, -8.0, 1.1],
-    [3.4, -9.6, 1.5],
-  ];
-  bergDefs.forEach(([x, z, rad], i) => {
-    const geo = d.add(icebergGeometry(rad, 3 + i * 1.7));
-    const mesh = new THREE.Mesh(geo, bergMat);
-    mesh.position.set(x, WATER_Y + rad * 0.14, z);
-    mesh.rotation.y = r() * 6.28;
-    mesh.castShadow = rad > 3;
+  // ── icebergs drifting in the lead (one merged draw call, per-berg bobbing in the vertex shader) ──
+  {
+    const bergDefs: Array<[number, number, number]> = [
+      // x, z, radius
+      [-2.6, -13.5, 2.2],
+      [3.1, -21, 3.1],
+      [-1.8, -31, 4.4],
+      [2.0, -44, 5.4],
+      [-3.0, -58, 6.4],
+      [0.5, -76, 8.0],
+      [3.4, -96, 9.5],
+      [-3.6, 11.5, 1.4],
+      [3.7, 15.5, 1.9],
+      [-3.3, -8.0, 1.1],
+      [3.4, -9.6, 1.5],
+    ];
+    const parts: THREE.BufferGeometry[] = [];
+    const m4 = new THREE.Matrix4();
+    const qt = new THREE.Quaternion();
+    const e = new THREE.Euler();
+    bergDefs.forEach(([x, z, rad], i) => {
+      const geo = icebergGeometry(rad, 3 + i * 1.7);
+      e.set((r() - 0.5) * 0.06, r() * 6.28, (r() - 0.5) * 0.06);
+      qt.setFromEuler(e);
+      m4.compose(new THREE.Vector3(x, WATER_Y + rad * 0.14, z), qt, new THREE.Vector3(1, 1, 1));
+      geo.applyMatrix4(m4);
+      const ph = new Float32Array(geo.getAttribute('position').count).fill(r() * 6.28);
+      geo.setAttribute('aPhase', new THREE.BufferAttribute(ph, 1));
+      parts.push(geo);
+    });
+    bergMat.positionNode = Fn(() => {
+      const p = positionLocal.toVar();
+      const ph = attribute('aPhase', 'float');
+      p.y.addAssign(sin(time.mul(0.5).add(ph)).mul(0.05));
+      p.x.addAssign(sin(time.mul(0.31).add(ph.mul(1.7))).mul(0.035));
+      p.z.addAssign(cos(time.mul(0.27).add(ph.mul(2.3))).mul(0.03));
+      return p;
+    })();
+    const mesh = new THREE.Mesh(d.add(mergeIce(parts)), bergMat);
+    mesh.castShadow = true;
     mesh.receiveShadow = true;
-    mesh.name = 'iceberg';
+    mesh.name = 'icebergs';
     group.add(mesh);
-    bergs.push({ mesh, base: mesh.position.clone(), seed: r() * 10, rot: (r() - 0.5) * 0.02 });
-  });
+  }
 
   // ── brash ice ──
   {
@@ -102,13 +119,11 @@ export function createBackdrop(ctx: WorldCtx): Backdrop {
     { x: 80, z: -20, yaw: -Math.PI / 2, len: 200, h: 44, seed: 7 },
     { x: -20, z: 90, yaw: Math.PI, len: 200, h: 30, seed: 8 },
   ];
+  const glacierParts: THREE.BufferGeometry[] = [];
   for (const w of walls) {
-    const geo = d.add(glacierWallGeometry(w.len, w.h, w.seed, Math.round(w.len / 2.6), 9));
-    const mesh = new THREE.Mesh(geo, glacierMat);
-    mesh.position.set(w.x, -1.5, w.z);
-    mesh.rotation.y = w.yaw;
-    mesh.name = 'glacier';
-    group.add(mesh);
+    const geo = glacierWallGeometry(w.len, w.h, w.seed, Math.round(w.len / 2.6), 9);
+    geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(w.x, -1.5, w.z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, w.yaw, 0)), new THREE.Vector3(1, 1, 1)));
+    glacierParts.push(geo);
   }
 
   // ── seracs / ice spires along the fronts ──
@@ -134,9 +149,7 @@ export function createBackdrop(ctx: WorldCtx): Backdrop {
       sp.translate(-40 + i * 10 + (r() - 0.5) * 4, 4, -140 + r() * 8);
       parts.push(sp);
     }
-    const mesh = new THREE.Mesh(d.add(mergeIce(parts)), glacierMat);
-    mesh.name = 'seracs';
-    group.add(mesh);
+    for (const p of parts) glacierParts.push(p);
   }
 
   // ── distant mountains ──
@@ -176,11 +189,20 @@ export function createBackdrop(ctx: WorldCtx): Backdrop {
     { x: -31.5, z: -74, yaw: Math.PI / 2 - 0.16, s: 3.2 },
   ];
   for (const c of caveDefs) {
-    const cave = createIceCave(c.s, c.x + c.z, q, d, glacierMat);
-    cave.position.set(c.x, terrainHeight(c.x, c.z) - 0.2, c.z);
-    cave.rotation.y = c.yaw;
-    group.add(cave);
+    const cave = createIceCave(c.s, c.x + c.z, q, d);
+    const cy = terrainHeight(c.x, c.z) - 0.2;
+    cave.group.position.set(c.x, cy, c.z);
+    cave.group.rotation.y = c.yaw;
+    group.add(cave.group);
+    cave.arch.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(c.x, cy, c.z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, c.yaw, 0)), new THREE.Vector3(1, 1, 1)));
+    glacierParts.push(cave.arch);
     caveMouths.push(new THREE.Vector3(c.x + Math.sin(c.yaw) * 3, terrainHeight(c.x, c.z) + 1.6, c.z + Math.cos(c.yaw) * 3));
+  }
+
+  {
+    const mesh = new THREE.Mesh(d.add(mergeIce(glacierParts)), glacierMat);
+    mesh.name = 'glaciers';
+    group.add(mesh);
   }
 
   // ── crystals ──
@@ -223,13 +245,8 @@ export function createBackdrop(ctx: WorldCtx): Backdrop {
   return {
     group,
     caves: caveMouths,
-    update(_dt, t) {
-      for (const b of bergs) {
-        b.mesh.position.y = b.base.y + Math.sin(t * 0.5 + b.seed) * 0.05;
-        b.mesh.rotation.y += b.rot * _dt;
-        b.mesh.rotation.z = Math.sin(t * 0.37 + b.seed) * 0.018;
-        b.mesh.rotation.x = Math.sin(t * 0.29 + b.seed * 2) * 0.014;
-      }
+    update() {
+      /* everything animates in shaders */
     },
   };
 }

@@ -31,7 +31,7 @@ function mistMaterial(seed: number, strength: number): THREE.MeshBasicNodeMateri
   const n = mx_fractal_noise_float(vec3(wp.x.mul(0.11).add(time.mul(0.05)).add(seed), wp.y.mul(0.11).sub(time.mul(0.03)), time.mul(0.04)), 3, 2.0, 0.5, 1.0);
   const edge = smoothstep(0, 0.28, v.x).mul(smoothstep(1, 0.72, v.x)).mul(smoothstep(0, 0.22, v.y)).mul(smoothstep(1, 0.78, v.y));
   m.colorNode = color('#f4f1de');
-  m.opacityNode = smoothstep(-0.15, 0.65, n).mul(edge).mul(strength);
+  m.opacityNode = smoothstep(0.0, 0.8, n).mul(edge).mul(strength);
   return m;
 }
 
@@ -112,7 +112,7 @@ export function buildLife(c: BuildCtx, o: { boat: THREE.Object3D; groundAt: (x: 
   const mistGeo = bin.add(new THREE.PlaneGeometry(17, 26, 1, 1));
   mistGeo.rotateX(-Math.PI / 2);
   // sheets stay away from the boat/jetty zone so the gameplay area remains crisp
-  const mistDefs: Array<[number, number, number]> = [[-12, 0.3, 0.5], [-24, 0.42, 0.55], [-34, 0.3, 0.5], [-46, 0.48, 0.55], [15, 0.2, 0.3], [27, 0.22, 0.3]];
+  const mistDefs: Array<[number, number, number]> = [[-12, 0.3, 0.3], [-24, 0.42, 0.34], [-34, 0.3, 0.3], [-46, 0.48, 0.34], [15, 0.2, 0.16], [27, 0.22, 0.14]];
   mistDefs.forEach(([z, y, k], i) => {
     const m = new THREE.Mesh(mistGeo, bin.add(mistMaterial(i * 3.7, k)));
     m.position.set(Math.sin(i * 2.1) * 1.2, y, z);
@@ -120,7 +120,7 @@ export function buildLife(c: BuildCtx, o: { boat: THREE.Object3D; groundAt: (x: 
     m.renderOrder = 6;
     group.add(m);
   });
-  const fallMist = new THREE.Mesh(mistGeo, bin.add(mistMaterial(11, 0.6)));
+  const fallMist = new THREE.Mesh(mistGeo, bin.add(mistMaterial(11, 0.4)));
   fallMist.position.set(0, FALL_LIFT * 0.7, FALL_Z + 3);
   fallMist.scale.set(0.8, 1, 0.5);
   fallMist.renderOrder = 6;

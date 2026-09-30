@@ -55,6 +55,20 @@ function backpack(r: number): THREE.BufferGeometry {
   return merge(parts);
 }
 
+/** Cushion top above the seat anchor on the ferry (see ferry.ts): seated figures are fitted to it. */
+const SEAT_TOP_REL = 0.345;
+
+/** Per-figure fit onto the round ferry stools: kids dangle their feet, adults sink in slightly. */
+function seatFit(): (actor: HumanoidActor, dt: number) => void {
+  let k = 0;
+  return (actor, dt) => {
+    const d = actor.rig.dims;
+    const want = SEAT_TOP_REL + 0.14 * d.torsoLen - (d.legLen - 0.92 * d.thigh);
+    k += ((actor.mood === 'sit' ? 1 : 0) - k) * (1 - Math.exp(-dt * 8));
+    actor.rig.hips.position.y += want * k;
+  };
+}
+
 export interface Cast {
   actors: Map<string, Actor>;
   humans: HumanoidActor[];
@@ -162,7 +176,7 @@ export function createCast(groundAt: (x: number, z: number) => number): Cast {
   const actors = new Map<string, Actor>();
   const humans: HumanoidActor[] = [];
   for (const [id, def] of Object.entries(specs)) {
-    const a = new HumanoidActor({ id, name: def.name, spec: def.spec, walkSpeed: def.walk, sitsInVehicle: true });
+    const a = new HumanoidActor({ id, name: def.name, spec: def.spec, walkSpeed: def.walk, sitsInVehicle: true, extra: seatFit() });
     a.groundAt = groundAt;
     if (id === 'henrik') {
       a.attach(a.rig.head, goggles(a.rig.dims.headR), 'goggles');
