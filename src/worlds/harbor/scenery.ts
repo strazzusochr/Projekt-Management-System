@@ -633,7 +633,7 @@ export async function buildScenery(scene: THREE.Scene, quality: QualityPreset, w
     puffMat.colorNode = pc;
     puffMat.emissiveNode = pc.mul(0.2);
     const nFar = Math.round(16 * Math.max(0.5, dens));
-    const nGap = 5;
+    const nGap = 4;
     const nClumps = nFar + nGap;
     const perClump = 6;
     const puffs = new THREE.InstancedMesh(puffGeo, puffMat, nClumps * perClump);
@@ -649,7 +649,7 @@ export async function buildScenery(scene: THREE.Scene, quality: QualityPreset, w
     for (let c = 0; c < nClumps; c++) {
       const gap = c >= nFar;
       const cx = gap ? -15 + rnd() * 30 : -150 + rnd() * 300;
-      const cy = gap ? -22 + rnd() * 8 : -23 + rnd() * 14 + (c % 5 === 0 ? 14 * rnd() : 0);
+      const cy = gap ? -25 + rnd() * 6 : -23 + rnd() * 14 + (c % 5 === 0 ? 14 * rnd() : 0);
       const cz = gap ? -20 + rnd() * 30 : -140 + rnd() * 170;
       const v = gap ? 0.25 + rnd() * 0.35 : 0.35 + rnd() * 0.7;
       const sc = gap ? 1.6 + rnd() * 1.6 : 3 + rnd() * 6;
@@ -696,7 +696,7 @@ export async function buildScenery(scene: THREE.Scene, quality: QualityPreset, w
     }
     const mk = (n: number, y0: number, y1: number, sMin: number, sMax: number): D[] =>
       Array.from({ length: n }, () => ({ x: -10 + rnd() * 20, y: y0 + rnd() * (y1 - y0), z: -9 + rnd() * 16, s: sMin + rnd() * (sMax - sMin), rx: rnd() * 6, ry: rnd() * 6, rz: rnd() * 6, sp: 0.1 + rnd() * 0.35, ph: rnd() * 6 }));
-    const dr = mk(nR, -11, -3, 0.35, 1.2);
+    const dr = mk(nR, -11, -3, 0.22, 0.7);
     const dp = mk(nP, -9, -2.5, 0.8, 1.2);
     const cc2 = new THREE.Color();
     dr.forEach((_d, i) => debrisRocks.setColorAt(i, cc2.set(i % 2 ? '#ffffff' : '#d9d0c6')));

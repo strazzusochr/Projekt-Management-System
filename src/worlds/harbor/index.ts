@@ -61,8 +61,8 @@ function createCloudSea(): { base: THREE.Mesh; wisps: THREE.Mesh } {
   const m2 = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false });
   const w1 = mx_fractal_noise_float(vec3(drift.x.mul(0.02).sub(t.mul(1.6)), drift.y.mul(0.045), t), 4, 2.0, 0.5, 1.0);
   const wisp = smoothstep(0.05, 0.6, w1);
-  m2.colorNode = mix(color('#ffbf94'), color('#fff1d6'), smoothstep(0.2, 0.9, w1));
-  m2.opacityNode = wisp.mul(0.6).mul(float(1).sub(smoothstep(200, 700, dist)));
+  m2.colorNode = mix(color('#d98f9c'), color('#ffe2c0'), smoothstep(0.2, 0.9, w1));
+  m2.opacityNode = wisp.mul(0.34).mul(float(1).sub(smoothstep(200, 700, dist)));
   const wisps = new THREE.Mesh(geo2, m2);
   wisps.position.y = -19;
   wisps.frustumCulled = false;
