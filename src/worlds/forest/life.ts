@@ -111,10 +111,11 @@ export function buildLife(c: BuildCtx, o: { boat: THREE.Object3D; groundAt: (x: 
   // ── mist drifting over the river ──
   const mistGeo = bin.add(new THREE.PlaneGeometry(17, 26, 1, 1));
   mistGeo.rotateX(-Math.PI / 2);
-  const mistZ = [8, -6, -20, -32, 22, -44];
-  mistZ.forEach((z, i) => {
-    const m = new THREE.Mesh(mistGeo, bin.add(mistMaterial(i * 3.7, 0.5)));
-    m.position.set(Math.sin(i * 2.1) * 1.4, 0.32 + (i % 3) * 0.16, z);
+  // sheets stay away from the boat/jetty zone so the gameplay area remains crisp
+  const mistDefs: Array<[number, number, number]> = [[-12, 0.3, 0.5], [-24, 0.42, 0.55], [-34, 0.3, 0.5], [-46, 0.48, 0.55], [15, 0.2, 0.3], [27, 0.22, 0.3]];
+  mistDefs.forEach(([z, y, k], i) => {
+    const m = new THREE.Mesh(mistGeo, bin.add(mistMaterial(i * 3.7, k)));
+    m.position.set(Math.sin(i * 2.1) * 1.2, y, z);
     m.rotation.y = i * 0.9;
     m.renderOrder = 6;
     group.add(m);
@@ -127,7 +128,7 @@ export function buildLife(c: BuildCtx, o: { boat: THREE.Object3D; groundAt: (x: 
 
   // ── sun rays through the canopy ──
   const shaftTargets: Array<[number, number, number, number]> = [
-    [-9.5, 0.5, -11, 1.0], [9, 0.5, -15, 0.9], [-3.5, 0, -25, 1.2], [5.5, 0, -31, 1.1], [-17.5, 0.6, -14.5, 0.9], [-12, 0.5, 5, 0.8],
+    [-9.5, 0.5, -11, 1.0], [9, 0.5, -15, 0.9], [-3.5, 0, -25, 1.2], [5.5, 0, -31, 1.1], [-17.5, 0.6, -14.5, 0.9], [-14.5, 0.5, 8.5, 0.8],
   ];
   const down = new THREE.Vector3(0, -1, 0);
   const toGround = c.sun.clone().negate();
@@ -228,6 +229,9 @@ export function buildLife(c: BuildCtx, o: { boat: THREE.Object3D; groundAt: (x: 
   let stagTimer = 0;
 
   return {
+    dispose(): void {
+      for (const n of npcs) n.dispose();
+    },
     update(dt, t): void {
       // birds
       for (let i = 0; i < nBirds; i++) {

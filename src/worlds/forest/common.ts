@@ -135,6 +135,7 @@ export interface BuildCtx {
 
 export interface Part {
   update?(dt: number, t: number, camera: THREE.PerspectiveCamera): void;
+  dispose?(): void;
 }
 
 /** One draw call of soft additive ground glow pools (light pools of lanterns, mushrooms, shrine …). */

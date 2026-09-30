@@ -216,6 +216,7 @@ const factory: WorldFactory = async (ctx): Promise<LevelWorld> => {
     },
     dispose(): void {
       for (const a of actors.values()) a.dispose();
+      for (const p of parts) p.dispose?.();
       scene.traverse((o) => {
         const m = o as THREE.Mesh;
         if (m.geometry) m.geometry.dispose();
