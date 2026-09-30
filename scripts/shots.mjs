@@ -57,7 +57,14 @@ for (const id of levelsArg.split(',')) {
       await page.click('[data-testid="btn-sail"]');
       await page.waitForTimeout(300);
       await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle(240000));
-      if (guard === 2) await page.screenshot({ path: `${out}/${id}-2-crossing.png` });
+      const chk = await page.evaluate(() => {
+        const q = window.__RIVERBOUND_QA__;
+        const st = q.currentLevel();
+        return st.entities.map((e) => ({ id: e.id, loc: e.location, w: q.entityWorldPos(e.id), s: q.entityScreenPos(e.id) }));
+      });
+      const bad = chk.filter((c) => !c.w || !c.w.inScene || c.w.y < c.w.ground - 0.25 || !c.s || !c.s.visible);
+      console.log(id, 'crossing', guard, bad.length ? 'PROBLEM ' + JSON.stringify(bad) : 'all figures visible & on ground');
+      await page.screenshot({ path: `${out}/${id}-2-crossing-${String(guard).padStart(2, '0')}.png` });
     }
     const fin = await page.evaluate(() => window.__RIVERBOUND_QA__.currentLevel());
     await page.waitForTimeout(2500);

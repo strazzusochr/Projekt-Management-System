@@ -554,6 +554,13 @@ export class App {
         };
       },
       entityScreenPos: (id: string) => (this.level && this.level.model.has(id) ? proj(this.level.entityScreenAnchor(id)) : null),
+      /** debug: world position of a figure (disappearing / clipping checks) */
+      entityWorldPos: (id: string) => {
+        const a = this.level?.world.actors.get(id);
+        if (!a) return null;
+        const p = a.root.getWorldPosition(new THREE.Vector3());
+        return { x: p.x, y: p.y, z: p.z, ground: this.level!.world.groundAt(p.x, p.z), inScene: !!a.root.parent };
+      },
       boatScreenPos: () => (this.level ? proj(this.level.vehicleAnchor()) : null),
       bankScreenPos: (side: 'left' | 'right') => (this.level ? proj(this.level.bankAnchor(side === 'left' ? 0 : 1)) : null),
       mapNodeScreenPos: (id: string) => (this.map && this.screen === 'map' ? proj(this.map.nodePosition(id)) : null),

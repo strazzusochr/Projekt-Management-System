@@ -64,6 +64,7 @@ export class LevelController implements PointerHandler {
       const a = world.actors.get(id);
       if (!a) throw new Error(`Welt ${meta.id}: Figur "${id}" fehlt.`);
       this.proxies.push(a.pickProxy);
+      a.groundAt = (x, z) => this.walkGround(x, z);
     }
     this.proxies.push(world.vehicle.pickProxy);
     this.placeAll(true);
@@ -77,22 +78,37 @@ export class LevelController implements PointerHandler {
   }
 
   /**
-   * Clean formation: figures stand side by side (seen from the camera) in a line leading away
-   * from the dock; more than four figures form two neat rows (couples stand one behind the other).
+   * Formation: figures wait in one tidy row along the shoreline (parallel to the water),
+   * alternating left/right of the jetty – never scattered.
    */
   private slotFor(id: string, side: Side): THREE.Vector3 {
     const bank = this.world.banks[side];
     const i = this.model.indexOf(id);
-    const n = this.model.n;
     const sign = side === 0 ? -1 : 1;
-    const edge = Math.max(Math.abs(bank.dockPoint.x) + 1.8, 7.2);
-    const twoRows = n > 4;
-    const col = twoRows ? Math.floor(i / 2) : i;
-    const row = twoRows ? i % 2 : 0;
-    const spacing = twoRows ? 1.5 : 1.4;
-    const x = sign * (edge + col * spacing);
-    const z = bank.dockPoint.z + (twoRows ? (row === 0 ? 1.1 : -0.9) : 1.2);
-    return new THREE.Vector3(x, 0, z);
+    const x = sign * this.shoreX(side);
+    const offset = (i % 2 === 0 ? 1 : -1) * (1.7 + Math.floor(i / 2) * 1.45);
+    return new THREE.Vector3(x, 0, bank.dockPoint.z + offset);
+  }
+
+  /** |x| of the waiting line: just on land behind the jetty's shore end. */
+  private shoreX(side: Side): number {
+    return Math.max(Math.abs(this.world.banks[side].dockPoint.x) + 2.2, 7.0);
+  }
+
+  /** Where the jetty meets the land (walk waypoint between the row and the dock point). */
+  private jettyLand(side: Side): THREE.Vector3 {
+    const dock = this.world.banks[side].dockPoint;
+    return new THREE.Vector3((side === 0 ? -1 : 1) * this.shoreX(side), dock.y, dock.z);
+  }
+
+  /** Ground sampler that walks on the jetty deck instead of the river bed below it. */
+  private walkGround(x: number, z: number): number {
+    const g = this.world.groundAt(x, z);
+    const side: Side = x < 0 ? 0 : 1;
+    const dock = this.world.banks[side].dockPoint;
+    const ax = Math.abs(x);
+    const onJetty = Math.abs(z - dock.z) < 1.15 && ax >= Math.abs(dock.x) - 0.6 && ax <= this.shoreX(side) + 0.3;
+    return onJetty ? Math.max(g, dock.y) : g;
   }
 
   private freeSeat(id: string): number {
@@ -262,7 +278,10 @@ export class LevelController implements PointerHandler {
     this.seatOf.set(id, seatIdx);
     const seat = v.seats[seatIdx]!;
     a.react('select');
-    await a.walkTo([this.world.banks[side].dockPoint]);
+    const loc = a.root.getWorldPosition(new THREE.Vector3());
+    const land = this.jettyLand(side);
+    const route = Math.abs(loc.z - land.z) > 0.4 ? [land, this.world.banks[side].dockPoint] : [this.world.banks[side].dockPoint];
+    await a.walkTo(route);
     const target = seat.getWorldPosition(new THREE.Vector3());
     await a.hopTo(target, 0.7, 0.55, 'world');
     seat.attach(a.root);
@@ -279,9 +298,9 @@ export class LevelController implements PointerHandler {
     this.world.scene.attach(a.root);
     a.mood = 'idle';
     const dock = this.world.banks[side].dockPoint;
-    await a.hopTo(new THREE.Vector3(dock.x, a.groundAt(dock.x, dock.z), dock.z), 0.7, 0.55, 'world');
+    await a.hopTo(new THREE.Vector3(dock.x, Math.max(a.groundAt(dock.x, dock.z), dock.y), dock.z), 0.7, 0.55, 'world');
     const slot = this.slotFor(id, side);
-    await a.walkTo([slot]);
+    await a.walkTo([this.jettyLand(side), slot]);
     a.faceTowards(this.world.banks[side].facing);
   }
 
