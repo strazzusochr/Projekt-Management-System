@@ -12,6 +12,7 @@ const logs = [];
 page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(`[${m.type()}] ${m.text().slice(0, 300)}`); });
 page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`));
 const r = renderer === 'webgl' ? '&renderer=webgl' : '';
+const shot = async (opts) => { try { await shot({ ...opts, timeout: 180000 }); } catch (e) { console.log('screenshot skipped', String(e).slice(0, 80)); } };
 const waitReady = async () => {
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
@@ -28,14 +29,14 @@ const t0 = Date.now();
 await page.goto(`${base}/?qa=1&mute=1&adaptive=0&quality=${quality}${r}`);
 await waitReady();
 await page.waitForTimeout(1500);
-await page.screenshot({ path: `${out}/00-map.png` });
+await shot({ path: `${out}/00-map.png` });
 console.log('map', (Date.now() - t0) / 1000, 's', JSON.stringify(await page.evaluate(() => window.__RIVERBOUND_QA__.rendererInfo())));
 for (const id of levelsArg.split(',')) {
   const t1 = Date.now();
   await page.goto(`${base}/?qa=1&mute=1&adaptive=0&quality=${quality}${r}&level=${id}`);
   await waitReady();
   await page.waitForTimeout(1200);
-  await page.screenshot({ path: `${out}/${id}-1-start.png` });
+  await shot({ path: `${out}/${id}-1-start.png` });
   const info = await page.evaluate(() => window.__RIVERBOUND_QA__.rendererInfo());
   console.log(id, 'loaded', (Date.now() - t1) / 1000, 's', JSON.stringify(info));
   if (play === '1') {
@@ -64,11 +65,11 @@ for (const id of levelsArg.split(',')) {
       });
       const bad = chk.filter((c) => !c.w || !c.w.inScene || (c.loc !== 'boat' && c.w.y < c.w.ground - 0.25) || !c.s || !c.s.visible);
       console.log(id, 'crossing', guard, bad.length ? 'PROBLEM ' + JSON.stringify(bad) : 'all figures visible & on ground');
-      await page.screenshot({ path: `${out}/${id}-2-crossing-${String(guard).padStart(2, '0')}.png` });
+      await shot({ path: `${out}/${id}-2-crossing-${String(guard).padStart(2, '0')}.png` });
     }
     const fin = await page.evaluate(() => window.__RIVERBOUND_QA__.currentLevel());
     await page.waitForTimeout(2500);
-    await page.screenshot({ path: `${out}/${id}-3-end.png` });
+    await shot({ path: `${out}/${id}-3-end.png` });
     console.log(id, 'won=', fin.won, 'moves=', fin.moves, 'cost=', fin.cost, (Date.now() - t1) / 1000, 's');
   }
 }
