@@ -168,6 +168,16 @@ export class LevelController implements PointerHandler {
     }
   }
 
+  /** World points that must stay visible in the default view (waiting rows + docks). */
+  framingPoints(): THREE.Vector3[] {
+    const pts: THREE.Vector3[] = [];
+    for (const side of [0, 1] as Side[]) {
+      for (const s of this.slots[side]) pts.push(new THREE.Vector3(s.x, this.world.groundAt(s.x, s.z) + 0.9, s.z));
+      pts.push(this.world.vehicle.docks[side].clone());
+    }
+    return pts;
+  }
+
   /** |x| of the waiting line: just on land behind the jetty's shore end. */
   private shoreX(side: Side): number {
     return Math.max(Math.abs(this.world.banks[side].dockPoint.x) + 2.2, 7.0);

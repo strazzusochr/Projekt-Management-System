@@ -273,9 +273,10 @@ export class App {
       this.ui.setTheme(meta.id);
       this.post.configure(world.scene, this.rig.camera, this.renderer.preset, world.look);
       this.rig.setLimits(world.camera.limits);
-      // default view looks diagonally across the river so the waiting rows read side by side
+      // default view looks diagonally across the river so the waiting rows read side by side,
+      // auto-framed so no figure ends up under the HUD panels
       const h = world.camera.home;
-      this.rig.setHome({ target: h.target, radius: h.radius * 1.05, polar: Math.min(h.polar, 1.0), azimuth: h.azimuth + 0.62 }, true);
+      this.rig.setHome(this.fitHome(this.level.framingPoints(), { target: h.target.clone(), radius: h.radius, polar: Math.min(h.polar, 1.0), azimuth: h.azimuth + 0.5 }), true);
       await this.renderer.renderer.compileAsync(world.scene, this.rig.camera).catch(() => undefined);
       this.input.handler = this.level;
       this.save.markStarted(id);
@@ -386,6 +387,36 @@ export class App {
       onUnboard: (id: string) => this.level?.toggleEntity(id),
       onUiSound: (kind: 'hover' | 'click') => this.audio.play(kind === 'hover' ? 'hover' : 'ui'),
     };
+  }
+
+  /** Moves/zooms the view until all points lie in the HUD-free part of the screen. */
+  private fitHome(points: THREE.Vector3[], v: { target: THREE.Vector3; radius: number; polar: number; azimuth: number }) {
+    const cam = this.rig.camera;
+    const W = this.renderer.width;
+    const H = this.renderer.height;
+    const safe = { l: 0.05 * W, r: 0.95 * W, t: 0.14 * H, b: 0.66 * H };
+    for (let i = 0; i < 40; i++) {
+      this.rig.setHome(v, true);
+      cam.updateMatrixWorld();
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      let plate = false;
+      for (const p of points) {
+        const s = this.rig.project(p, W, H);
+        minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x);
+        minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y);
+        if (s.x < 0.33 * W && s.y < 0.4 * H) plate = true;
+      }
+      const fits = minX >= safe.l && maxX <= safe.r && minY >= safe.t && maxY <= safe.b && !plate;
+      if (fits) break;
+      const k = v.radius * 0.0009;
+      const right = new THREE.Vector3(Math.cos(v.azimuth), 0, -Math.sin(v.azimuth));
+      const back = new THREE.Vector3(Math.sin(v.azimuth), 0, Math.cos(v.azimuth));
+      const cx = (minX + maxX) / 2 - (safe.l + safe.r) / 2 + (plate ? -0.08 * W : 0);
+      const cy = (minY + maxY) / 2 - (safe.t + safe.b) / 2;
+      v.target.addScaledVector(right, cx * k).addScaledVector(back, cy * k);
+      if (maxX - minX > (safe.r - safe.l) * 0.98 || maxY - minY > (safe.b - safe.t) * 0.98 || i > 20) v.radius *= 1.06;
+    }
+    return v;
   }
 
   private applySettings(patch: Partial<Settings>): void {
