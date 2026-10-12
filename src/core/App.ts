@@ -562,6 +562,18 @@ export class App {
         const p = a.root.getWorldPosition(new THREE.Vector3());
         return { x: p.x, y: p.y, z: p.z, ground: this.level!.world.groundAt(p.x, p.z), inScene: !!a.root.parent };
       },
+      /** debug: what covers a figure (downward ray at its position, excluding itself) */
+      probe: (id: string) => {
+        const a = this.level?.world.actors.get(id);
+        if (!a) return null;
+        const p = a.root.getWorldPosition(new THREE.Vector3());
+        const rc = new THREE.Raycaster(new THREE.Vector3(p.x, 60, p.z), new THREE.Vector3(0, -1, 0));
+        rc.camera = this.rig.camera;
+        const own = new Set<THREE.Object3D>();
+        a.root.traverse((o) => own.add(o));
+        const hits = rc.intersectObjects(this.level!.world.scene.children, true).filter((h) => !own.has(h.object) && h.object.visible && !(h.object as THREE.Sprite).isSprite);
+        return { p: [p.x, p.y, p.z], ground: this.level!.world.groundAt(p.x, p.z), hits: hits.slice(0, 4).map((h) => [Number(h.point.y.toFixed(2)), h.object.name || h.object.type]) };
+      },
       boatScreenPos: () => (this.level ? proj(this.level.vehicleAnchor()) : null),
       bankScreenPos: (side: 'left' | 'right') => (this.level ? proj(this.level.bankAnchor(side === 'left' ? 0 : 1)) : null),
       mapNodeScreenPos: (id: string) => (this.map && this.screen === 'map' ? proj(this.map.nodePosition(id)) : null),

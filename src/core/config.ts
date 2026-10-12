@@ -13,13 +13,22 @@ export interface AppConfig {
   mute: boolean;
 }
 
+/** Renderer preference persisted after an automatic WebGPU → WebGL2 fallback. */
+export function storedRenderer(): string | null {
+  try {
+    return window.localStorage.getItem('riverbound.renderer');
+  } catch {
+    return null;
+  }
+}
+
 const QUALITY_VALUES: QualityLevel[] = ['low', 'medium', 'high', 'ultra'];
 
 export function readConfig(search: string = window.location.search): AppConfig {
   const p = new URLSearchParams(search);
   const q = p.get('quality');
   return {
-    forceWebGL: p.get('renderer') === 'webgl',
+    forceWebGL: p.get('renderer') === 'webgl' || (p.get('renderer') !== 'webgpu' && storedRenderer() === 'webgl'),
     quality: q && (QUALITY_VALUES as string[]).includes(q) ? (q as QualityLevel) : null,
     debug: p.get('debug') === '1',
     qa: p.get('qa') === '1',

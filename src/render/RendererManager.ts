@@ -56,6 +56,27 @@ export class RendererManager {
     const backend = (renderer.backend as unknown as { isWebGPUBackend?: boolean }).isWebGPUBackend ? 'webgpu' : 'webgl2';
     mgr.backend = backend;
     mgr.adapterLabel = mgr.describeAdapter();
+    if (backend === 'webgpu') {
+      // Any WebGPU validation/shader error or device loss → switch permanently to the WebGL2 backend
+      // (same TSL materials, compiled to GLSL) instead of leaving the player with a black screen.
+      let switched = false;
+      const fallback = (reason: string) => {
+        if (switched) return;
+        switched = true;
+        console.error('[Riverbound] WebGPU-Fehler, wechsle auf WebGL2:', reason);
+        try {
+          window.localStorage.setItem('riverbound.renderer', 'webgl');
+        } catch {
+          /* ignore */
+        }
+        const url = new URL(window.location.href);
+        url.searchParams.delete('renderer');
+        window.location.replace(url.toString());
+      };
+      const r = renderer as unknown as { onError: (e: { message: string }) => void; onDeviceLost: (i: { message?: string }) => void };
+      r.onError = (e) => fallback(e.message);
+      r.onDeviceLost = (i) => fallback(i.message ?? 'device lost');
+    }
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1;
     renderer.outputColorSpace = THREE.SRGBColorSpace;

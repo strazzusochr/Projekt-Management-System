@@ -62,7 +62,7 @@ for (const id of levelsArg.split(',')) {
         const st = q.currentLevel();
         return st.entities.map((e) => ({ id: e.id, loc: e.location, w: q.entityWorldPos(e.id), s: q.entityScreenPos(e.id) }));
       });
-      const bad = chk.filter((c) => !c.w || !c.w.inScene || c.w.y < c.w.ground - 0.25 || !c.s || !c.s.visible);
+      const bad = chk.filter((c) => !c.w || !c.w.inScene || (c.loc !== 'boat' && c.w.y < c.w.ground - 0.25) || !c.s || !c.s.visible);
       console.log(id, 'crossing', guard, bad.length ? 'PROBLEM ' + JSON.stringify(bad) : 'all figures visible & on ground');
       await page.screenshot({ path: `${out}/${id}-2-crossing-${String(guard).padStart(2, '0')}.png` });
     }

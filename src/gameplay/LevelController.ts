@@ -67,6 +67,7 @@ export class LevelController implements PointerHandler {
       a.groundAt = (x, z) => this.walkGround(x, z);
     }
     this.proxies.push(world.vehicle.pickProxy);
+    this.computeSlots();
     this.placeAll(true);
     this.refreshHud();
   }
@@ -77,17 +78,94 @@ export class LevelController implements PointerHandler {
     return this.world.actors.get(id)!;
   }
 
-  /**
-   * Formation: figures wait in one tidy row along the shoreline (parallel to the water),
-   * alternating left/right of the jetty – never scattered.
-   */
+  /** Pre-computed, obstacle-free waiting slots per side (tidy row along the shore). */
+  private slots: [THREE.Vector3[], THREE.Vector3[]] = [[], []];
+
   private slotFor(id: string, side: Side): THREE.Vector3 {
-    const bank = this.world.banks[side];
-    const i = this.model.indexOf(id);
-    const sign = side === 0 ? -1 : 1;
-    const x = sign * this.shoreX(side);
-    const offset = (i % 2 === 0 ? 1 : -1) * (1.7 + Math.floor(i / 2) * 1.45);
-    return new THREE.Vector3(x, 0, bank.dockPoint.z + offset);
+    const list = this.slots[side];
+    return list[this.model.indexOf(id) % list.length]!;
+  }
+
+  /**
+   * Builds one tidy row along the shoreline (parallel to the water), alternating left/right of
+   * the jetty. Every candidate is checked with downward rays for obstacles taller than 1 m
+   * (tree trunks, canopies, rocks, buildings) so no figure can end up hidden inside scenery.
+   */
+  private computeSlots(): void {
+    this.world.scene.updateMatrixWorld(true);
+    const rc = new THREE.Raycaster();
+    rc.camera = this.deps.rig.camera;
+    const ignore = new Set<THREE.Object3D>();
+    for (const a of this.world.actors.values()) a.root.traverse((o) => ignore.add(o));
+    this.world.vehicle.root.traverse((o) => ignore.add(o));
+    const down = new THREE.Vector3(0, -1, 0);
+    const origin = new THREE.Vector3();
+    const blocked = (x: number, z: number): boolean => {
+      const g = this.world.groundAt(x, z);
+      for (const [dx, dz] of [[0, 0], [0.4, 0], [-0.4, 0], [0, 0.4], [0, -0.4]] as const) {
+        origin.set(x + dx, g + 40, z + dz);
+        rc.set(origin, down);
+        rc.far = 39; // only geometry more than 1 m above the ground counts as an obstacle
+        const hits = rc.intersectObjects(this.world.scene.children, true);
+        for (const h of hits) {
+          const o = h.object as THREE.Mesh;
+          if (ignore.has(o) || (o as unknown as THREE.Sprite).isSprite || !o.visible || o.name === 'sky') continue;
+          const m = o.material as THREE.Material | THREE.Material[] | undefined;
+          const mm = Array.isArray(m) ? m[0] : m;
+          if (!mm || mm.transparent || mm.visible === false) continue;
+          return true;
+        }
+      }
+      return false;
+    };
+    const blockedPoint = (x: number, z: number): boolean => {
+      const g = this.world.groundAt(x, z);
+      origin.set(x, g + 40, z);
+      rc.set(origin, down);
+      rc.far = 38.8;
+      for (const h of rc.intersectObjects(this.world.scene.children, true)) {
+        const o = h.object as THREE.Mesh;
+        if (ignore.has(o) || (o as unknown as THREE.Sprite).isSprite || !o.visible || o.name === 'sky') continue;
+        const m = o.material as THREE.Material | THREE.Material[] | undefined;
+        const mm = Array.isArray(m) ? m[0] : m;
+        if (!mm || mm.transparent || mm.visible === false) continue;
+        return true;
+      }
+      return false;
+    };
+    const n = this.model.n;
+    for (const side of [0, 1] as Side[]) {
+      const dock = this.world.banks[side].dockPoint;
+      const sign = side === 0 ? -1 : 1;
+      const base = this.shoreX(side);
+      const out: THREE.Vector3[] = [];
+      for (const dxRow of [0, 1.0, 2.0, -0.5, 3.0]) {
+        for (let k = 0; k < 14 && out.length < n; k++) {
+          for (const dir of [1, -1]) {
+            if (out.length >= n) break;
+            const z = dock.z + dir * (1.7 + k * 1.3);
+            const x = sign * (base + dxRow);
+            if (out.some((p) => Math.hypot(p.x - x, p.z - z) < 1.1)) continue;
+            if (blocked(x, z)) continue;
+            // the walk from the jetty to this slot must not pass through scenery either
+            const land = this.jettyLand(side);
+            let pathClear = true;
+            const steps = Math.ceil(Math.hypot(x - land.x, z - land.z) / 0.6);
+            for (let s = 1; s < steps && pathClear; s++) {
+              const t = s / steps;
+              if (blockedPoint(land.x + (x - land.x) * t, land.z + (z - land.z) * t)) pathClear = false;
+            }
+            if (pathClear) out.push(new THREE.Vector3(x, 0, z));
+          }
+        }
+        if (out.length >= n) break;
+      }
+      // fallback: the world's own slots if the shoreline is completely built up
+      for (let i = 0; out.length < n; i++) out.push(this.world.banks[side].slots[i % this.world.banks[side].slots.length]!.clone());
+      // order by distance to the jetty so the row stays compact
+      out.sort((a, b) => Math.abs(a.z - dock.z) - Math.abs(b.z - dock.z) || Math.abs(a.x) - Math.abs(b.x));
+      this.slots[side] = out;
+    }
   }
 
   /** |x| of the waiting line: just on land behind the jetty's shore end. */
