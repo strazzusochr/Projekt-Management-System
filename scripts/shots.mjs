@@ -15,8 +15,8 @@ const r = renderer === 'webgl' ? '&renderer=webgl' : '';
 const waitReady = async () => {
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
-      await page.waitForFunction(() => window.__RIVERBOUND_QA__?.isReady?.(), null, { timeout: 240000, polling: 500 });
-      await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle(240000));
+      await page.waitForFunction(() => window.__RIVERBOUND_QA__?.isReady?.(), null, { timeout: 1800000, polling: 500 });
+      await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle(1800000));
       return;
     } catch (e) {
       if (!String(e).includes('context was destroyed') && !String(e).includes('navigation')) throw e;
@@ -46,17 +46,17 @@ for (const id of levelsArg.split(',')) {
       if (st.won) break;
       const sol = await page.evaluate(() => window.__RIVERBOUND_QA__.solveFromCurrent());
       const group = sol.actions[0];
-      for (const eid of st.boatLoad) if (!group.includes(eid)) { const p = await page.evaluate((e) => window.__RIVERBOUND_QA__.entityScreenPos(e), eid); if (!(await page.evaluate(() => 0))) {} await click(p); await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle(600000)); }
+      for (const eid of st.boatLoad) if (!group.includes(eid)) { const p = await page.evaluate((e) => window.__RIVERBOUND_QA__.entityScreenPos(e), eid); if (!(await page.evaluate(() => 0))) {} await click(p); await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle(1800000)); }
       for (const eid of group) {
         const cur = await page.evaluate(() => window.__RIVERBOUND_QA__.currentLevel());
         if (cur.boatLoad.includes(eid)) continue;
         const p = await page.evaluate((e) => window.__RIVERBOUND_QA__.entityScreenPos(e), eid);
         await click(p);
-        await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle(600000));
+        await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle(1800000));
       }
       await page.click('[data-testid="btn-sail"]');
       await page.waitForTimeout(300);
-      await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle(240000));
+      await page.evaluate(() => window.__RIVERBOUND_QA__.waitIdle(1800000));
       const chk = await page.evaluate(() => {
         const q = window.__RIVERBOUND_QA__;
         const st = q.currentLevel();
