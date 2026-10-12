@@ -12,7 +12,7 @@ const logs = [];
 page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(`[${m.type()}] ${m.text().slice(0, 300)}`); });
 page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`));
 const r = renderer === 'webgl' ? '&renderer=webgl' : '';
-const shot = async (opts) => { try { await shot({ ...opts, timeout: 180000 }); } catch (e) { console.log('screenshot skipped', String(e).slice(0, 80)); } };
+const shot = async (opts) => { try { await page.screenshot({ ...opts, timeout: 180000 }); } catch (e) { console.log('screenshot skipped', String(e).slice(0, 80)); } };
 const waitReady = async () => {
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
