@@ -620,6 +620,15 @@ export class LevelController implements PointerHandler {
     ndc.set(x, y);
     raycaster.setFromCamera(ndc, this.camera());
     const hits = raycaster.intersectObjects(this.proxies, true);
+    // overlapping figures: choose the one whose centre is closest to the pointer ray
+    let best: { id: string; d: number; p: THREE.Vector3 } | null = null;
+    for (const h of hits) {
+      const pick = h.object.userData.pick as PickHit | undefined;
+      if (pick?.kind !== 'entity') continue;
+      const d = raycaster.ray.distanceToPoint(this.actor(pick.id).getCenter(tmpV));
+      if (!best || d < best.d) best = { id: pick.id, d, p: h.point.clone() };
+    }
+    if (best) return { kind: 'entity', id: best.id, point: { x: best.p.x, y: best.p.y, z: best.p.z } };
     for (const h of hits) {
       let o: THREE.Object3D | null = h.object;
       while (o) {

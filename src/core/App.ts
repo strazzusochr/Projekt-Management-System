@@ -273,7 +273,9 @@ export class App {
       this.ui.setTheme(meta.id);
       this.post.configure(world.scene, this.rig.camera, this.renderer.preset, world.look);
       this.rig.setLimits(world.camera.limits);
-      this.rig.setHome(world.camera.home, true);
+      // default view looks diagonally across the river so the waiting rows read side by side
+      const h = world.camera.home;
+      this.rig.setHome({ target: h.target, radius: h.radius * 1.05, polar: Math.min(h.polar, 1.0), azimuth: h.azimuth + 0.62 }, true);
       await this.renderer.renderer.compileAsync(world.scene, this.rig.camera).catch(() => undefined);
       this.input.handler = this.level;
       this.save.markStarted(id);
