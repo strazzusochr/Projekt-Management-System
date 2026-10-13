@@ -15,3 +15,4 @@ src/worlds/*/smoke.test.ts
 scripts/_*.mjs
 android/build/
 android/*.jks
+release/*.idsig
