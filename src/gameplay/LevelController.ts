@@ -143,7 +143,7 @@ export class LevelController implements PointerHandler {
         for (let k = 0; k < 14 && out.length < n; k++) {
           for (const dir of [1, -1]) {
             if (out.length >= n) break;
-            const z = dock.z + dir * (1.7 + k * 1.3);
+            const z = dock.z + dir * (1.8 + k * 1.6);
             const x = sign * (base + dxRow);
             if (out.some((p) => Math.hypot(p.x - x, p.z - z) < 1.1)) continue;
             if (blocked(x, z)) continue;
