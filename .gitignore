@@ -13,3 +13,5 @@ src/worlds/*/_harness/
 src/worlds/*/vitest.tmp.config.ts
 src/worlds/*/smoke.test.ts
 scripts/_*.mjs
+android/build/
+android/*.jks

@@ -61,7 +61,9 @@ export class App {
     this.ui.showBoot(0.1, 'Grafik wird vorbereitet …');
 
     const settings = this.save.settings;
-    const quality: QualityLevel = this.cfg.quality ?? settings.quality;
+    // phones/tablets start one step lower; the first-run benchmark can still adjust it
+    const mobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1100);
+    const quality: QualityLevel = this.cfg.quality ?? (settings.qualityAuto && mobile && settings.quality === 'high' ? 'medium' : settings.quality);
     this.renderer = await RendererManager.create({ canvasParent: stage, forceWebGL: this.cfg.forceWebGL, quality, adaptive: this.cfg.adaptive });
     if (!this.cfg.quality && settings.qualityAuto && this.renderer.isSoftwareRenderer && quality !== 'low') {
       this.renderer.setQuality('low');
